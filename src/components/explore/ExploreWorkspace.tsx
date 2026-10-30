@@ -11,8 +11,6 @@ import dynamic from 'next/dynamic'
 import { List, Loader2, MousePointerClick, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
-import { DisclaimerBanner } from '@/components/layout/DisclaimerBanner'
-import { DisclaimerGate } from '@/components/layout/DisclaimerGate'
 import { ModeSwitcher } from '@/components/layout/ModeSwitcher'
 import { ViewControls } from '@/components/avatar/ViewControls'
 import { LayerControls } from '@/components/info/LayerControls'
@@ -111,8 +109,6 @@ export function ExploreWorkspace() {
 
   return (
     <div className="flex h-[calc(100dvh-4rem)] w-full overflow-hidden">
-      <DisclaimerGate />
-
       {/* Left: region list (desktop) */}
       {listOpenDesktop ? (
         <aside
@@ -225,9 +221,6 @@ export function ExploreWorkspace() {
         aria-label="Region details"
         className="hidden w-[440px] shrink-0 flex-col border-l border-white/8 bg-surface/70 lg:flex"
       >
-        <div className="px-4 pt-3">
-          <DisclaimerBanner />
-        </div>
         <div className="min-h-0 flex-1">
           <ContextPanel onSelect={handleSelect} />
         </div>
@@ -236,9 +229,6 @@ export function ExploreWorkspace() {
       {/* Mobile: bottom sheet panel */}
       <div className="lg:hidden">
         <MobileSheet header={sheetHeader} expandSignal={selectedRegionId}>
-          <div className="px-4 pt-3">
-            <DisclaimerBanner />
-          </div>
           <ContextPanel onSelect={handleSelect} />
         </MobileSheet>
       </div>

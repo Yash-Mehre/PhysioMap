@@ -18,6 +18,31 @@ const assessSchema = z.object({
   redFlags: z.enum(RED_FLAGS).array(),
 })
 
+/** Zod schema for the assessment response (urgency, red flags, associations, guidance). */
+const guidanceSchema = z.object({
+  headline: z.string().min(1),
+  doNow: z.string().min(1).array().min(1).max(3),
+  avoid: z.string().min(1).array().min(1).max(3),
+  watchFor: z.string().min(1).array().min(1).max(3),
+  followUp: z.string().min(1).array().min(1).max(3),
+  basedOn: z.string().min(1).array().min(1),
+})
+
+const assessResponseSchema = z.object({
+  urgency: z.enum(['self-care', 'monitor', 'see-clinician', 'urgent']),
+  redFlags: z.enum(RED_FLAGS).array(),
+  associations: z
+    .object({
+      title: z.string(),
+      explanation: z.string(),
+      score: z.number(),
+      matchedSensations: z.enum(SENSATIONS).array(),
+      matchedAggravators: z.enum(AGGRAVATORS).array(),
+    })
+    .array(),
+  guidance: guidanceSchema,
+})
+
 /** POST /api/pain/assess — run the pure rule engine for a symptom report. */
 export async function POST(request: NextRequest) {
   try {
@@ -53,8 +78,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const result = assessPain(input, content.pain.associations, content.region.label)
-    return NextResponse.json(result)
+    const result = assessPain(input, content.pain.associations)
+    const validated = assessResponseSchema.safeParse(result)
+    if (!validated.success) {
+      return NextResponse.json(
+        { error: { code: 'invalid-output', message: 'Assessment guidance failed validation.' } },
+        { status: 500 },
+      )
+    }
+    return NextResponse.json(validated.data)
   } catch {
     return NextResponse.json(
       { error: { code: 'internal-error', message: 'Assessment failed unexpectedly.' } },

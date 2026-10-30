@@ -27,6 +27,8 @@ export interface HealthSummaryProfileBlock {
   paceLabel: string
   dietLabel: string
   exclusionsLabel: string
+  /** Joined medical-history labels, or "None reported". */
+  medicalHistoryLabel: string
 }
 
 export interface HealthSummaryBmiBlock {
@@ -267,6 +269,29 @@ export async function generateHealthSummaryPdf(snapshot: HealthSummarySnapshot):
     doc.text(value, x + labelWidth + 3.5, y)
   }
 
+  /** "Label value" pair where the value wraps onto further lines when long. */
+  const drawWrappedLabelValue = (label: string, value: string, x: number): number => {
+    let y = cursor.y + 3
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(9)
+    doc.setTextColor(...COLOR_MUTED)
+    doc.text(label, x, y)
+    const labelWidth = doc.getTextWidth(label)
+    const maxWidth = PAGE_WIDTH - MARGIN_X - (x + labelWidth + 3.5)
+    const lines = doc.splitTextToSize(value, maxWidth) as string[]
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(...COLOR_TEXT)
+    lines.forEach((line, index) => {
+      if (index > 0) {
+        ensureSpace(6)
+        y = cursor.y + 3
+      }
+      doc.text(line, x + labelWidth + 3.5, y)
+      if (index < lines.length - 1) cursor.y += 5.5
+    })
+    return lines.length
+  }
+
   const tableDefaults: UserOptions = {
     theme: 'grid',
     margin: { left: MARGIN_X, right: MARGIN_X, top: SLIM_HEADER_HEIGHT + 6, bottom: PAGE_HEIGHT - CONTENT_BOTTOM },
@@ -312,6 +337,9 @@ export async function generateHealthSummaryPdf(snapshot: HealthSummarySnapshot):
     })
     ensureSpace(9)
     drawLabelValue('Exclusions', profile.exclusionsLabel, MARGIN_X, cursor.y + 3)
+    cursor.y += 8
+    ensureSpace(9)
+    drawWrappedLabelValue('Medical history', profile.medicalHistoryLabel, MARGIN_X)
     cursor.y += 10
   }
 

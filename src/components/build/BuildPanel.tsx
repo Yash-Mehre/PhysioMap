@@ -3,12 +3,14 @@
 /** Build mode panel: Exercises / Muscle Science / My Workout tabs. */
 
 import { useMemo, useState } from 'react'
+import { HeartPulse } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { BuildFilters, type BuildFilterState } from '@/components/build/BuildFilters'
 import { ExerciseCard } from '@/components/build/ExerciseCard'
 import { MuscleScienceTab } from '@/components/build/MuscleScienceTab'
 import { WorkoutPlanTab } from '@/components/build/WorkoutPlanTab'
 import { getSetScheme } from '@/lib/build/setSchemes'
+import { getTrainingCautions } from '@/lib/pain/conditionNotes'
 import { useProfileStore } from '@/store/useProfileStore'
 import type { Exercise, RegionContent } from '@/types'
 
@@ -25,6 +27,10 @@ export function BuildPanel({ content }: BuildPanelProps) {
   })
 
   const scheme = getSetScheme(filters.goal)
+  const trainingCautions = useMemo(
+    () => getTrainingCautions(profile.medicalConditions),
+    [profile.medicalConditions],
+  )
 
   const visibleExercises = useMemo(
     () =>
@@ -52,6 +58,19 @@ export function BuildPanel({ content }: BuildPanelProps) {
 
       <TabsContent value="exercises" className="mt-0 space-y-3 focus-visible:outline-none">
         <BuildFilters value={filters} onChange={setFilters} />
+        {trainingCautions.length > 0 ? (
+          <div className="space-y-1 rounded-xl border border-mode-info/25 bg-mode-info/8 px-3.5 py-2.5">
+            {trainingCautions.map((caution) => (
+              <p
+                key={caution}
+                className="flex items-start gap-1.5 text-[11px] leading-relaxed text-mode-info"
+              >
+                <HeartPulse className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
+                {caution}
+              </p>
+            ))}
+          </div>
+        ) : null}
         <p className="px-0.5 text-[11px] leading-relaxed text-muted-foreground">
           Scheme for your goal — {scheme.setsRange} × {scheme.repsRange}, {scheme.restSeconds}s rest. Hover an
           exercise to light up its muscles on the body.

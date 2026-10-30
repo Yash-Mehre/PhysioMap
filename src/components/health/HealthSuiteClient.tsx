@@ -4,20 +4,21 @@
  * Health & Nutrition Suite shell: URL-synced tabs (`?tab=`) plus the
  * persistent key-numbers card (BMI · daily calories · water goal) shown once
  * a profile exists. Each tab is a self-contained component reading its own
- * stores.
+ * stores; the profile itself lives in the header profile sheet.
  */
 
 import { useMemo } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Flame, HeartPulse, Droplets } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { DEFAULT_HEALTH_TAB, HEALTH_TABS, isHealthTabId } from '@/config/healthTabs'
 import { buildNutritionSummary, isProfileComplete } from '@/lib/health/profileValidation'
 import { formatMl } from '@/lib/health/units'
 import { useHydrated } from '@/hooks/useHydrated'
 import { useProfileStore } from '@/store/useProfileStore'
-import { ProfileTab } from '@/components/health/ProfileTab'
+import { useProfilePanel } from '@/store/useProfilePanel'
 import { CalculatorsTab } from '@/components/health/CalculatorsTab'
 import { MealPlannerTab } from '@/components/health/meal/MealPlannerTab'
 import { HydrationTab } from '@/components/health/hydration/HydrationTab'
@@ -65,9 +66,6 @@ export function HealthSuiteClient() {
           ))}
         </TabsList>
 
-        <TabsContent value="profile" className="mt-0 focus-visible:outline-none">
-          <ProfileTab />
-        </TabsContent>
         <TabsContent value="calculators" className="mt-0 focus-visible:outline-none">
           <CalculatorsTab />
         </TabsContent>
@@ -81,6 +79,24 @@ export function HealthSuiteClient() {
           <SummaryTab />
         </TabsContent>
       </Tabs>
+    </div>
+  )
+}
+
+/** Empty state shown while the profile is incomplete — opens the profile sheet in edit mode. */
+function KeyNumbersEmptyState() {
+  const openPanel = useProfilePanel((state) => state.openPanel)
+  return (
+    <div className="flex flex-col gap-3 rounded-xl border border-white/8 bg-surface/60 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between">
+      <p className="text-sm text-muted-foreground">
+        Complete your profile to unlock BMI, daily calorie and water targets across this suite.
+      </p>
+      <Button
+        onClick={() => openPanel('edit')}
+        className="shrink-0 bg-brand-blue text-white hover:bg-brand-blue/85"
+      >
+        Complete your profile
+      </Button>
     </div>
   )
 }
@@ -108,11 +124,7 @@ function KeyNumbers({
   }
 
   if (!complete || !summary) {
-    return (
-      <p className="rounded-xl border border-white/8 bg-surface/60 px-4 py-3 text-sm text-muted-foreground">
-        Complete your profile to unlock BMI, daily calorie and water targets across this suite.
-      </p>
-    )
+    return <KeyNumbersEmptyState />
   }
 
   const items = [

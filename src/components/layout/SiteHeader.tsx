@@ -1,9 +1,10 @@
 'use client'
 
 /**
- * Sticky top bar for the app pages (/explore, /health): logo, nav links
- * (Home · Explore · Health Suite) with active state, mobile hamburger menu
- * (shadcn Sheet) and the profile/preferences dialog.
+ * Sticky top bar for the app pages (/explore, /health): logo hard-left,
+ * nav links + profile trigger hard-right, spanning the full width with a
+ * minimal edge gap. Mobile: logo far left, hamburger + profile icon far
+ * right. The profile icon opens the shared ProfileSheet (view mode).
  */
 
 import { useState } from 'react'
@@ -19,10 +20,43 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet'
 import { SITE, SITE_NAV } from '@/config/site'
-import { ProfileDialog } from '@/components/layout/ProfileDialog'
+import { useHydrated } from '@/hooks/useHydrated'
+import { useProfilePanel } from '@/store/useProfilePanel'
+import { useProfileStore } from '@/store/useProfileStore'
 import { cn } from '@/lib/utils'
 
 const NAV_ITEMS = [{ href: '/', label: 'Home' }, ...SITE_NAV] as const
+
+/** Header profile trigger: the user's initial once a name is saved, else the icon. */
+function ProfileTrigger({ className }: { className?: string }) {
+  const hydrated = useHydrated()
+  const openPanel = useProfilePanel((state) => state.openPanel)
+  const name = useProfileStore((state) => state.profile.name)
+  const initial =
+    hydrated && name !== undefined && name.trim() !== '' ? name.trim().charAt(0).toUpperCase() : undefined
+
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      aria-label="Profile"
+      title="Profile"
+      onClick={() => openPanel('view')}
+      className={cn('rounded-full text-muted-foreground hover:text-foreground', className)}
+    >
+      {initial !== undefined ? (
+        <span
+          aria-hidden="true"
+          className="flex h-6 w-6 items-center justify-center rounded-full border border-copper/50 bg-copper/15 font-heading text-xs font-bold text-copper"
+        >
+          {initial}
+        </span>
+      ) : (
+        <UserRound className="h-4.5 w-4.5" />
+      )}
+    </Button>
+  )
+}
 
 export function SiteHeader() {
   const pathname = usePathname()
@@ -33,7 +67,7 @@ export function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-white/8 bg-background/80 backdrop-blur-md">
-      <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-3 px-4 sm:px-6">
+      <div className="flex h-16 w-full max-w-none items-center justify-between gap-3 px-3 sm:px-4">
         <Link
           href="/"
           className="group flex items-center gap-2.5 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-copper"
@@ -50,7 +84,7 @@ export function SiteHeader() {
           </span>
         </Link>
 
-        {/* Desktop nav */}
+        {/* Desktop: nav links + profile trigger, hard right */}
         <nav aria-label="Main navigation" className="hidden items-center gap-1 md:flex">
           {NAV_ITEMS.map((item) => {
             const active = isActive(item.href)
@@ -60,7 +94,7 @@ export function SiteHeader() {
                 href={item.href}
                 aria-current={active ? 'page' : undefined}
                 className={cn(
-                  'rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-copper sm:px-4',
+                  'rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-copper',
                   active ? 'bg-white/8 text-foreground' : 'text-muted-foreground hover:bg-white/5 hover:text-foreground',
                 )}
               >
@@ -68,30 +102,12 @@ export function SiteHeader() {
               </Link>
             )
           })}
-          <ProfileDialog>
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label="Open profile and preferences"
-              className="ml-1 h-9 w-9 rounded-full text-muted-foreground hover:text-foreground"
-            >
-              <UserRound className="h-4.5 w-4.5" />
-            </Button>
-          </ProfileDialog>
+          <ProfileTrigger className="ml-1 h-9 w-9" />
         </nav>
 
-        {/* Mobile: profile + hamburger */}
+        {/* Mobile: profile + hamburger, hard right */}
         <div className="flex items-center gap-1 md:hidden">
-          <ProfileDialog>
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label="Open profile and preferences"
-              className="h-11 w-11 rounded-full text-muted-foreground hover:text-foreground"
-            >
-              <UserRound className="h-4.5 w-4.5" />
-            </Button>
-          </ProfileDialog>
+          <ProfileTrigger className="h-11 w-11" />
           <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
             <SheetTrigger asChild>
               <Button

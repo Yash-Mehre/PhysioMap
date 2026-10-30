@@ -9,6 +9,7 @@
  * - Otherwise ⇒ 'self-care'.
  */
 
+import { buildGuidance } from '@/lib/pain/guidance'
 import { getClinicianFlags, getEmergencyFlags } from '@/lib/pain/redFlags'
 import type {
   PainAssociation,
@@ -85,52 +86,20 @@ function resolveUrgency(input: PainAssessmentInput): PainAssessmentResult['urgen
   return 'self-care'
 }
 
-function buildNextSteps(
-  urgency: PainAssessmentResult['urgency'],
-  regionLabel: string,
-): string[] {
-  switch (urgency) {
-    case 'urgent':
-      return [
-        'Seek urgent medical care now — do not wait to see if it settles.',
-        'Avoid self-treatment, heat, massage or heavy movement of the area until a professional has assessed you.',
-        'Bring a note of your symptoms and when they started — the Pain Log can help you recall details.',
-      ]
-    case 'see-clinician':
-      return [
-        `Book an assessment with a doctor or physiotherapist for your ${regionLabel.toLowerCase()} before continuing intense training.`,
-        'Write down what makes the pain better or worse over the next day or two to share at the visit.',
-        'Until then, keep the area comfortable — gentle movement is fine if it does not increase pain.',
-      ]
-    case 'monitor':
-      return [
-        'Track your symptoms in the Pain Log for a few days to spot what helps and what flares it up.',
-        'Try the gentle relief exercises in the Relief tab — stop immediately if pain increases or spreads.',
-        'Consider seeing a physiotherapist if the issue persists beyond a couple of weeks.',
-      ]
-    default:
-      return [
-        'Try the gentle relief exercises in the Relief tab for this region.',
-        'Check the Remedies tab for heat vs cold guidance and smart relative rest.',
-        'Keep moving gently — complete rest usually slows recovery for ordinary muscle soreness.',
-        'Log your symptoms now and re-assess in a few days to see the trend.',
-      ]
-  }
-}
-
 /**
  * Run the full assessment. `associations` come from the region's content
- * (provider data) so this function stays pure and testable.
+ * (provider data) so this function stays pure and testable. The guidance is
+ * composed from the region profile and the user's inputs.
  */
 export function assessPain(
   input: PainAssessmentInput,
   associations: readonly PainAssociation[],
-  regionLabel: string,
 ): PainAssessmentResult {
+  const urgency = resolveUrgency(input)
   return {
-    urgency: resolveUrgency(input),
+    urgency,
     redFlags: [...input.redFlags],
     associations: scoreAssociations(input, associations),
-    nextSteps: buildNextSteps(resolveUrgency(input), regionLabel),
+    guidance: buildGuidance(input, urgency),
   }
 }

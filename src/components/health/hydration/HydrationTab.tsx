@@ -9,7 +9,6 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
-import Link from 'next/link'
 import { format } from 'date-fns'
 import { motion } from 'framer-motion'
 import { toast } from 'sonner'
@@ -25,6 +24,7 @@ import { getWaterGoalMl, isProfileComplete } from '@/lib/health/profileValidatio
 import { formatMl } from '@/lib/health/units'
 import { hydrationDayTotal, hydrationPercent, hydrationStreak, toDateKey } from '@/lib/health/hydration'
 import { useHydrationStore } from '@/store/useHydrationStore'
+import { useProfilePanel } from '@/store/useProfilePanel'
 import { useProfileStore } from '@/store/useProfileStore'
 import { HydrationRing } from '@/components/health/hydration/HydrationRing'
 
@@ -43,6 +43,7 @@ export function HydrationTab() {
   const hydrated = useHydrated()
   const reducedMotion = usePrefersReducedMotion()
   const profile = useProfileStore((state) => state.profile)
+  const openPanel = useProfilePanel((state) => state.openPanel)
   const log = useHydrationStore((state) => state.log)
   const addEntry = useHydrationStore((state) => state.addEntry)
   const undoLast = useHydrationStore((state) => state.undoLast)
@@ -119,12 +120,13 @@ export function HydrationTab() {
           <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
           <p>
             Using a default {WATER_FALLBACK_ML.toLocaleString()} ml goal —{' '}
-            <Link
-              href="/health?tab=profile"
+            <button
+              type="button"
+              onClick={() => openPanel('edit')}
               className="font-semibold underline underline-offset-2 transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-copper"
             >
               complete your profile
-            </Link>{' '}
+            </button>{' '}
             for a personalized target.
           </p>
         </div>

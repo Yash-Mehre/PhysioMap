@@ -1,0 +1,672 @@
+     1→'use client'
+     2→
+     3→/**
+     4→ * Shared profile form — the single source of truth for editing the persisted
+     5→ * UserProfile. Used by the Health Suite Profile tab (full) and the header
+     6→ * ProfileDialog. Values are ALWAYS stored metric internally; imperial inputs
+     7→ * (ft + in / lb) convert on change and show the metric equivalent as helper
+     8→ * text. Validation runs inline through `healthProfileSchema` (zod) so the
+     9→ * Save action can never persist an out-of-range profile.
+    10→ *
+    11→ * Mount pattern: parent mounts this fresh with a `key` and passes
+    12→ * `initialProfile` — no state-sync effects.
+    13→ */
+    14→
+    15→import { useId, useState } from 'react'
+    16→import { Check } from 'lucide-react'
+    17→import { cn } from '@/lib/utils'
+    18→import { Button } from '@/components/ui/button'
+    19→import { Checkbox } from '@/components/ui/checkbox'
+    20→import { Input } from '@/components/ui/input'
+    21→import { Label } from '@/components/ui/label'
+    22→import {
+    23→  Select,
+    24→  SelectContent,
+    25→  SelectItem,
+    26→  SelectTrigger,
+    27→  SelectValue,
+    28→} from '@/components/ui/select'
+    29→import {
+    30→  DIET_OPTIONS,
+    31→  DIET_TAG_OPTIONS,
+    32→  GOAL_OPTIONS,
+    33→  PACE_OPTIONS,
+    34→  SEX_OPTIONS,
+    35→  UNIT_SYSTEM_OPTIONS,
+    36→  healthProfileSchema,
+    37→} from '@/config/healthSchemas'
+    38→import {
+    39→  ACTIVITY_LEVEL_LABELS,
+    40→  DIET_PREFERENCE_LABELS,
+    41→  DIET_TAG_LABELS,
+    42→  EQUIPMENT_LABELS,
+    43→  LEVEL_LABELS,
+    44→  SEX_LABELS,
+    45→  TRAINING_GOAL_LABELS,
+    46→  WEIGHT_GOAL_LABELS,
+    47→} from '@/config/labels'
+    48→import { ACTIVITY_DESCRIPTIONS, ACTIVITY_LEVEL_ORDER } from '@/config/nutrition'
+    49→import { EQUIPMENT_OPTIONS, LEVEL_OPTIONS, TRAINING_GOAL_OPTIONS } from '@/config/profileOptions'
+    50→import { cmToFtIn, ftInToCm, kgToLb, lbToKg } from '@/lib/health/units'
+    51→import type {
+    52→  ActivityLevel,
+    53→  DietPreference,
+    54→  DietTag,
+    55→  Equipment,
+    56→  Level,
+    57→  PaceKgPerWeek,
+    58→  Sex,
+    59→  TrainingGoal,
+    60→  UnitSystem,
+    61→  UserProfile,
+    62→  WeightGoal,
+    63→} from '@/types'
+    64→
+    65→/** Fields of `healthProfileSchema` that the form validates inline. */
+    66→type ValidatableField =
+    67→  | 'age'
+    68→  | 'sex'
+    69→  | 'heightCm'
+    70→  | 'weightKg'
+    71→  | 'activityLevel'
+    72→  | 'goal'
+    73→  | 'paceKgPerWeek'
+    74→
+    75→const VALIDATABLE_FIELDS: readonly ValidatableField[] = [
+    76→  'age',
+    77→  'sex',
+    78→  'heightCm',
+    79→  'weightKg',
+    80→  'activityLevel',
+    81→  'goal',
+    82→  'paceKgPerWeek',
+    83→]
+    84→
+    85→type FieldErrors = Partial<Record<ValidatableField, string>>
+    86→
+    87→interface HealthFieldValues {
+    88→  age?: number
+    89→  sex?: Sex
+    90→  heightCm?: number
+    91→  weightKg?: number
+    92→  activityLevel?: ActivityLevel
+    93→  goal?: WeightGoal
+    94→  paceKgPerWeek?: PaceKgPerWeek
+    95→}
+    96→
+    97→/** Map a zod failure to "first message per field", keyed by field name. */
+    98→function validateFields(values: HealthFieldValues): FieldErrors {
+    99→  const parsed = healthProfileSchema.safeParse(values)
+   100→  if (parsed.success) return {}
+   101→  const errors: FieldErrors = {}
+   102→  for (const issue of parsed.error.issues) {
+   103→    const key = issue.path[0]
+   104→    if (typeof key !== 'string') continue
+   105→    const field = VALIDATABLE_FIELDS.find((candidate) => candidate === key)
+   106→    if (field !== undefined && errors[field] === undefined) {
+   107→      errors[field] = issue.message
+   108→    }
+   109→  }
+   110→  return errors
+   111→}
+   112→
+   113→/** Parse a numeric input string; blank or non-finite becomes undefined. */
+   114→function parseNumberInput(value: string): number | undefined {
+   115→  const trimmed = value.trim()
+   116→  if (trimmed === '') return undefined
+   117→  const parsed = Number(trimmed)
+   118→  return Number.isFinite(parsed) ? parsed : undefined
+   119→}
+   120→
+   121→/** Feet + inches input strings → centimetres (1 decimal); undefined when both blank. */
+   122→function imperialToCm(feetStr: string, inchesStr: string): number | undefined {
+   123→  if (feetStr.trim() === '' && inchesStr.trim() === '') return undefined
+   124→  const feet = feetStr.trim() === '' ? 0 : Number(feetStr)
+   125→  const inches = inchesStr.trim() === '' ? 0 : Number(inchesStr)
+   126→  if (!Number.isFinite(feet) || !Number.isFinite(inches)) return undefined
+   127→  return Math.round(ftInToCm(feet, inches) * 10) / 10
+   128→}
+   129→
+   130→/** Pounds input string → kilograms (1 decimal); undefined when blank. */
+   131→function poundsToKg(lbStr: string): number | undefined {
+   132→  const lb = parseNumberInput(lbStr)
+   133→  return lb === undefined ? undefined : Math.round(lbToKg(lb) * 10) / 10
+   134→}
+   135→
+   136→/** Inline validation message for a field (first zod issue only). */
+   137→function FieldError({ id, message }: { id: string; message: string | undefined }) {
+   138→  if (message === undefined) return null
+   139→  return (
+   140→    <p id={id} aria-live="polite" className="text-xs text-mode-pain">
+   141→      {message}
+   142→    </p>
+   143→  )
+   144→}
+   145→
+   146→export interface ProfileFormProps {
+   147→  /** Profile snapshot at mount time — the form never syncs back to it. */
+   148→  initialProfile: UserProfile
+   149→  /** Called with the complete profile when the (valid) form is submitted. */
+   150→  onSave: (profile: UserProfile) => void
+   151→  /** Optional cancel callback; renders a Cancel button when provided. */
+   152→  onCancel?: () => void
+   153→  /** Hides the Training section (kept for compact embeds). */
+   154→  compact?: boolean
+   155→}
+   156→
+   157→export function ProfileForm({ initialProfile, onSave, onCancel, compact = false }: ProfileFormProps) {
+   158→  const formId = useId()
+   159→  const [ageStr, setAgeStr] = useState(initialProfile.age !== undefined ? String(initialProfile.age) : '')
+   160→  const [sex, setSex] = useState<Sex | undefined>(initialProfile.sex)
+   161→  const [unitSystem, setUnitSystem] = useState<UnitSystem>(initialProfile.unitSystem)
+   162→  const [heightCmStr, setHeightCmStr] = useState(
+   163→    initialProfile.heightCm !== undefined ? String(initialProfile.heightCm) : '',
+   164→  )
+   165→  const [weightKgStr, setWeightKgStr] = useState(
+   166→    initialProfile.weightKg !== undefined ? String(initialProfile.weightKg) : '',
+   167→  )
+   168→  const [heightFtStr, setHeightFtStr] = useState(() =>
+   169→    initialProfile.heightCm !== undefined ? String(cmToFtIn(initialProfile.heightCm).feet) : '',
+   170→  )
+   171→  const [heightInStr, setHeightInStr] = useState(() =>
+   172→    initialProfile.heightCm !== undefined ? String(cmToFtIn(initialProfile.heightCm).inches) : '',
+   173→  )
+   174→  const [weightLbStr, setWeightLbStr] = useState(() =>
+   175→    initialProfile.weightKg !== undefined ? String(Math.round(kgToLb(initialProfile.weightKg))) : '',
+   176→  )
+   177→  const [activityLevel, setActivityLevel] = useState<ActivityLevel | undefined>(initialProfile.activityLevel)
+   178→  const [goal, setGoal] = useState<WeightGoal | undefined>(initialProfile.goal)
+   179→  const [pace, setPace] = useState<PaceKgPerWeek>(initialProfile.paceKgPerWeek ?? 0.5)
+   180→  const [dietPreference, setDietPreference] = useState<DietPreference>(initialProfile.dietPreference)
+   181→  const [excludedTags, setExcludedTags] = useState<DietTag[]>(initialProfile.excludedTags)
+   182→  const [trainingLevel, setTrainingLevel] = useState<Level>(initialProfile.trainingLevel)
+   183→  const [trainingGoal, setTrainingGoal] = useState<TrainingGoal>(initialProfile.trainingGoal)
+   184→  const [equipment, setEquipment] = useState<Equipment[]>(initialProfile.equipment)
+   185→
+   186→  // Always-metric values (imperial inputs convert through the helpers above).
+   187→  const age = parseNumberInput(ageStr)
+   188→  const heightCm = unitSystem === 'metric' ? parseNumberInput(heightCmStr) : imperialToCm(heightFtStr, heightInStr)
+   189→  const weightKg = unitSystem === 'metric' ? parseNumberInput(weightKgStr) : poundsToKg(weightLbStr)
+   190→
+   191→  const errors = validateFields({ age, sex, heightCm, weightKg, activityLevel, goal, paceKgPerWeek: pace })
+   192→  const isValid = Object.keys(errors).length === 0
+   193→
+   194→  const draft: UserProfile = {
+   195→    ...initialProfile,
+   196→    age,
+   197→    sex,
+   198→    heightCm,
+   199→    weightKg,
+   200→    activityLevel,
+   201→    goal,
+   202→    paceKgPerWeek: pace,
+   203→    unitSystem,
+   204→    dietPreference,
+   205→    excludedTags,
+   206→    trainingLevel,
+   207→    trainingGoal,
+   208→    equipment,
+   209→  }
+   210→
+   211→  const handleSexChange = (value: string): void => {
+   212→    const next = SEX_OPTIONS.find((option) => option === value)
+   213→    if (next !== undefined) setSex(next)
+   214→  }
+   215→
+   216→  const handleActivityChange = (value: string): void => {
+   217→    const next = ACTIVITY_LEVEL_ORDER.find((option) => option === value)
+   218→    if (next !== undefined) setActivityLevel(next)
+   219→  }
+   220→
+   221→  const handleGoalChange = (value: string): void => {
+   222→    const next = GOAL_OPTIONS.find((option) => option === value)
+   223→    if (next !== undefined) setGoal(next)
+   224→  }
+   225→
+   226→  const handlePaceChange = (value: string): void => {
+   227→    const next = PACE_OPTIONS.find((option) => String(option) === value)
+   228→    if (next !== undefined) setPace(next)
+   229→  }
+   230→
+   231→  const handleDietChange = (value: string): void => {
+   232→    const next = DIET_OPTIONS.find((option) => option === value)
+   233→    if (next !== undefined) setDietPreference(next)
+   234→  }
+   235→
+   236→  const handleTrainingLevelChange = (value: string): void => {
+   237→    const next = LEVEL_OPTIONS.find((option) => option === value)
+   238→    if (next !== undefined) setTrainingLevel(next)
+   239→  }
+   240→
+   241→  const handleTrainingGoalChange = (value: string): void => {
+   242→    const next = TRAINING_GOAL_OPTIONS.find((option) => option === value)
+   243→    if (next !== undefined) setTrainingGoal(next)
+   244→  }
+   245→
+   246→  /** Toggle units, converting the visible buffers in both directions. */
+   247→  const handleUnitChange = (next: UnitSystem): void => {
+   248→    if (next === unitSystem) return
+   249→    if (next === 'imperial') {
+   250→      const cm = parseNumberInput(heightCmStr)
+   251→      if (cm !== undefined) {
+   252→        const split = cmToFtIn(cm)
+   253→        setHeightFtStr(String(split.feet))
+   254→        setHeightInStr(String(split.inches))
+   255→      } else {
+   256→        setHeightFtStr('')
+   257→        setHeightInStr('')
+   258→      }
+   259→      const kg = parseNumberInput(weightKgStr)
+   260→      setWeightLbStr(kg !== undefined ? String(Math.round(kgToLb(kg))) : '')
+   261→    } else {
+   262→      const cm = imperialToCm(heightFtStr, heightInStr)
+   263→      setHeightCmStr(cm !== undefined ? String(cm) : '')
+   264→      const kg = poundsToKg(weightLbStr)
+   265→      setWeightKgStr(kg !== undefined ? String(kg) : '')
+   266→    }
+   267→    setUnitSystem(next)
+   268→  }
+   269→
+   270→  const toggleTag = (tag: DietTag): void => {
+   271→    setExcludedTags((current) =>
+   272→      current.includes(tag) ? current.filter((item) => item !== tag) : [...current, tag],
+   273→    )
+   274→  }
+   275→
+   276→  const toggleEquipment = (item: Equipment): void => {
+   277→    setEquipment((current) => {
+   278→      const next = current.includes(item) ? current.filter((value) => value !== item) : [...current, item]
+   279→      return next.length > 0 ? next : ['bodyweight']
+   280→    })
+   281→  }
+   282→
+   283→  const heightHint =
+   284→    unitSystem === 'imperial' && heightCm !== undefined ? `≈ ${heightCm} cm` : undefined
+   285→  const weightHint =
+   286→    unitSystem === 'imperial' && weightKg !== undefined ? `≈ ${weightKg} kg` : undefined
+   287→  const heightMessage = errors.heightCm ?? heightHint
+   288→  const weightMessage = errors.weightKg ?? weightHint
+   289→
+   290→  return (
+   291→    <form
+   292→      noValidate
+   293→      onSubmit={(event) => {
+   294→        event.preventDefault()
+   295→        if (isValid) onSave(draft)
+   296→      }}
+   297→      className="space-y-5"
+   298→    >
+   299→      {/* ---------------------------------------------------------- Body stats */}
+   300→      <section className="space-y-3" aria-label="Body stats">
+   301→        <h3 className="text-xs font-semibold uppercase tracking-[0.16em] text-copper">Body stats</h3>
+   302→        <div className="grid grid-cols-2 gap-3">
+   303→          <div className="space-y-1.5">
+   304→            <Label htmlFor={`${formId}-age`}>Age</Label>
+   305→            <Input
+   306→              id={`${formId}-age`}
+   307→              type="number"
+   308→              inputMode="numeric"
+   309→              min={10}
+   310→              max={100}
+   311→              value={ageStr}
+   312→              onChange={(event) => setAgeStr(event.target.value)}
+   313→              aria-invalid={errors.age !== undefined}
+   314→              aria-describedby={errors.age !== undefined ? `${formId}-age-error` : undefined}
+   315→            />
+   316→            <FieldError id={`${formId}-age-error`} message={errors.age} />
+   317→          </div>
+   318→          <div className="space-y-1.5">
+   319→            <Label htmlFor={`${formId}-sex`}>Sex</Label>
+   320→            <Select value={sex} onValueChange={handleSexChange}>
+   321→              <SelectTrigger
+   322→                id={`${formId}-sex`}
+   323→                className="w-full"
+   324→                aria-invalid={errors.sex !== undefined}
+   325→                aria-describedby={errors.sex !== undefined ? `${formId}-sex-error` : undefined}
+   326→              >
+   327→                <SelectValue placeholder="Select" />
+   328→              </SelectTrigger>
+   329→              <SelectContent>
+   330→                {SEX_OPTIONS.map((option) => (
+   331→                  <SelectItem key={option} value={option}>
+   332→                    {SEX_LABELS[option]}
+   333→                  </SelectItem>
+   334→                ))}
+   335→              </SelectContent>
+   336→            </Select>
+   337→            <FieldError id={`${formId}-sex-error`} message={errors.sex} />
+   338→          </div>
+   339→          <div className="col-span-2 space-y-1.5">
+   340→            <span id={`${formId}-units-label`} className="block text-sm font-medium leading-none">
+   341→              Units
+   342→            </span>
+   343→            <div
+   344→              role="group"
+   345→              aria-labelledby={`${formId}-units-label`}
+   346→              className="grid w-full grid-cols-2 gap-1 rounded-lg border border-white/8 bg-surface-raised p-1"
+   347→            >
+   348→              {UNIT_SYSTEM_OPTIONS.map((option) => (
+   349→                <button
+   350→                  key={option}
+   351→                  type="button"
+   352→                  aria-pressed={unitSystem === option}
+   353→                  onClick={() => handleUnitChange(option)}
+   354→                  className={cn(
+   355→                    'min-h-9 rounded-md px-3 text-xs font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60',
+   356→                    unitSystem === option
+   357→                      ? 'bg-brand-blue text-white'
+   358→                      : 'text-muted-foreground hover:text-foreground',
+   359→                  )}
+   360→                >
+   361→                  {option === 'metric' ? 'Metric (cm · kg)' : 'Imperial (ft · lb)'}
+   362→                </button>
+   363→              ))}
+   364→            </div>
+   365→          </div>
+   366→          {unitSystem === 'metric' ? (
+   367→            <>
+   368→              <div className="space-y-1.5">
+   369→                <Label htmlFor={`${formId}-height-cm`}>Height (cm)</Label>
+   370→                <Input
+   371→                  id={`${formId}-height-cm`}
+   372→                  type="number"
+   373→                  min={100}
+   374→                  max={250}
+   375→                  step="any"
+   376→                  value={heightCmStr}
+   377→                  onChange={(event) => setHeightCmStr(event.target.value)}
+   378→                  aria-invalid={errors.heightCm !== undefined}
+   379→                  aria-describedby={heightMessage !== undefined ? `${formId}-height-error` : undefined}
+   380→                />
+   381→                <FieldError id={`${formId}-height-error`} message={errors.heightCm} />
+   382→              </div>
+   383→              <div className="space-y-1.5">
+   384→                <Label htmlFor={`${formId}-weight-kg`}>Weight (kg)</Label>
+   385→                <Input
+   386→                  id={`${formId}-weight-kg`}
+   387→                  type="number"
+   388→                  min={25}
+   389→                  max={300}
+   390→                  step="any"
+   391→                  value={weightKgStr}
+   392→                  onChange={(event) => setWeightKgStr(event.target.value)}
+   393→                  aria-invalid={errors.weightKg !== undefined}
+   394→                  aria-describedby={weightMessage !== undefined ? `${formId}-weight-error` : undefined}
+   395→                />
+   396→                <FieldError id={`${formId}-weight-error`} message={errors.weightKg} />
+   397→              </div>
+   398→            </>
+   399→          ) : (
+   400→            <>
+   401→              <div className="space-y-1.5">
+   402→                <Label htmlFor={`${formId}-height-ft`}>Height (ft)</Label>
+   403→                <Input
+   404→                  id={`${formId}-height-ft`}
+   405→                  type="number"
+   406→                  inputMode="numeric"
+   407→                  min={3}
+   408→                  max={8}
+   409→                  value={heightFtStr}
+   410→                  onChange={(event) => setHeightFtStr(event.target.value)}
+   411→                  aria-invalid={errors.heightCm !== undefined}
+   412→                  aria-describedby={heightMessage !== undefined ? `${formId}-height-error` : undefined}
+   413→                />
+   414→              </div>
+   415→              <div className="space-y-1.5">
+   416→                <Label htmlFor={`${formId}-height-in`}>Height (in)</Label>
+   417→                <Input
+   418→                  id={`${formId}-height-in`}
+   419→                  type="number"
+   420→                  inputMode="numeric"
+   421→                  min={0}
+   422→                  max={11}
+   423→                  value={heightInStr}
+   424→                  onChange={(event) => setHeightInStr(event.target.value)}
+   425→                  aria-invalid={errors.heightCm !== undefined}
+   426→                  aria-describedby={heightMessage !== undefined ? `${formId}-height-error` : undefined}
+   427→                />
+   428→              </div>
+   429→              {heightMessage !== undefined && (
+   430→                <p
+   431→                  id={`${formId}-height-error`}
+   432→                  aria-live="polite"
+   433→                  className={cn(
+   434→                    'col-span-2 text-xs',
+   435→                    errors.heightCm !== undefined ? 'text-mode-pain' : 'text-muted-foreground',
+   436→                  )}
+   437→                >
+   438→                  {heightMessage}
+   439→                </p>
+   440→              )}
+   441→              <div className="col-span-2 space-y-1.5">
+   442→                <Label htmlFor={`${formId}-weight-lb`}>Weight (lb)</Label>
+   443→                <Input
+   444→                  id={`${formId}-weight-lb`}
+   445→                  type="number"
+   446→                  min={55}
+   447→                  max={660}
+   448→                  step="any"
+   449→                  value={weightLbStr}
+   450→                  onChange={(event) => setWeightLbStr(event.target.value)}
+   451→                  aria-invalid={errors.weightKg !== undefined}
+   452→                  aria-describedby={weightMessage !== undefined ? `${formId}-weight-error` : undefined}
+   453→                />
+   454→                {weightMessage !== undefined && (
+   455→                  <p
+   456→                    id={`${formId}-weight-error`}
+   457→                    aria-live="polite"
+   458→                    className={cn(
+   459→                      'text-xs',
+   460→                      errors.weightKg !== undefined ? 'text-mode-pain' : 'text-muted-foreground',
+   461→                    )}
+   462→                  >
+   463→                    {weightMessage}
+   464→                  </p>
+   465→                )}
+   466→              </div>
+   467→            </>
+   468→          )}
+   469→        </div>
+   470→      </section>
+   471→
+   472→      {/* --------------------------------------------------- Activity & goal */}
+   473→      <section className="space-y-3" aria-label="Activity and goal">
+   474→        <h3 className="text-xs font-semibold uppercase tracking-[0.16em] text-copper">Activity &amp; goal</h3>
+   475→        <div className="grid grid-cols-2 gap-3">
+   476→          <div className="col-span-2 space-y-1.5">
+   477→            <Label htmlFor={`${formId}-activity`}>Activity level</Label>
+   478→            <Select value={activityLevel} onValueChange={handleActivityChange}>
+   479→              <SelectTrigger
+   480→                id={`${formId}-activity`}
+   481→                className="w-full"
+   482→                aria-invalid={errors.activityLevel !== undefined}
+   483→                aria-describedby={errors.activityLevel !== undefined ? `${formId}-activity-error` : undefined}
+   484→              >
+   485→                <SelectValue placeholder="Select" />
+   486→              </SelectTrigger>
+   487→              <SelectContent>
+   488→                {ACTIVITY_LEVEL_ORDER.map((option) => (
+   489→                  <SelectItem key={option} value={option}>
+   490→                    {ACTIVITY_LEVEL_LABELS[option]}
+   491→                  </SelectItem>
+   492→                ))}
+   493→              </SelectContent>
+   494→            </Select>
+   495→            {activityLevel !== undefined ? (
+   496→              <p className="text-xs text-muted-foreground">{ACTIVITY_DESCRIPTIONS[activityLevel]}</p>
+   497→            ) : (
+   498→              <FieldError id={`${formId}-activity-error`} message={errors.activityLevel} />
+   499→            )}
+   500→          </div>
+   501→          <div className="space-y-1.5">
+   502→            <Label htmlFor={`${formId}-goal`}>Goal</Label>
+   503→            <Select value={goal} onValueChange={handleGoalChange}>
+   504→              <SelectTrigger
+   505→                id={`${formId}-goal`}
+   506→                className="w-full"
+   507→                aria-invalid={errors.goal !== undefined}
+   508→                aria-describedby={errors.goal !== undefined ? `${formId}-goal-error` : undefined}
+   509→              >
+   510→                <SelectValue placeholder="Select" />
+   511→              </SelectTrigger>
+   512→              <SelectContent>
+   513→                {GOAL_OPTIONS.map((option) => (
+   514→                  <SelectItem key={option} value={option}>
+   515→                    {WEIGHT_GOAL_LABELS[option]}
+   516→                  </SelectItem>
+   517→                ))}
+   518→              </SelectContent>
+   519→            </Select>
+   520→            <FieldError id={`${formId}-goal-error`} message={errors.goal} />
+   521→          </div>
+   522→          <div className="space-y-1.5">
+   523→            <Label htmlFor={`${formId}-pace`}>Weekly pace</Label>
+   524→            <Select
+   525→              value={String(pace)}
+   526→              onValueChange={handlePaceChange}
+   527→              disabled={goal === 'maintain'}
+   528→            >
+   529→              <SelectTrigger id={`${formId}-pace`} className="w-full">
+   530→                <SelectValue />
+   531→              </SelectTrigger>
+   532→              <SelectContent>
+   533→                {PACE_OPTIONS.map((option) => (
+   534→                  <SelectItem key={option} value={String(option)}>
+   535→                    {option} kg / week
+   536→                  </SelectItem>
+   537→                ))}
+   538→              </SelectContent>
+   539→            </Select>
+   540→            <p className="text-xs text-muted-foreground">
+   541→              {goal === 'maintain' ? 'Pace applies when losing or gaining' : 'How fast to move toward your goal'}
+   542→            </p>
+   543→          </div>
+   544→        </div>
+   545→      </section>
+   546→
+   547→      {/* ---------------------------------------------------------------- Diet */}
+   548→      <section className="space-y-3" aria-label="Diet">
+   549→        <h3 className="text-xs font-semibold uppercase tracking-[0.16em] text-copper">Diet</h3>
+   550→        <div className="space-y-1.5">
+   551→          <Label htmlFor={`${formId}-diet`}>Diet preference</Label>
+   552→          <Select value={dietPreference} onValueChange={handleDietChange}>
+   553→            <SelectTrigger id={`${formId}-diet`} className="w-full">
+   554→              <SelectValue />
+   555→            </SelectTrigger>
+   556→            <SelectContent>
+   557→              {DIET_OPTIONS.map((option) => (
+   558→                <SelectItem key={option} value={option}>
+   559→                  {DIET_PREFERENCE_LABELS[option]}
+   560→                </SelectItem>
+   561→              ))}
+   562→            </SelectContent>
+   563→          </Select>
+   564→        </div>
+   565→        <div className="space-y-2">
+   566→          <span id={`${formId}-exclusions-label`} className="block text-sm font-medium leading-none">
+   567→            Foods to exclude
+   568→          </span>
+   569→          <div role="group" aria-labelledby={`${formId}-exclusions-label`} className="flex flex-wrap gap-2">
+   570→            {DIET_TAG_OPTIONS.map((tag) => {
+   571→              const active = excludedTags.includes(tag)
+   572→              return (
+   573→                <button
+   574→                  key={tag}
+   575→                  type="button"
+   576→                  aria-pressed={active}
+   577→                  onClick={() => toggleTag(tag)}
+   578→                  className={cn(
+   579→                    'inline-flex min-h-10 items-center gap-1.5 rounded-full border px-3.5 text-xs font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60',
+   580→                    active
+   581→                      ? 'border-copper/60 bg-copper/15 text-copper'
+   582→                      : 'border-white/10 bg-surface-raised text-muted-foreground hover:border-white/25 hover:text-foreground',
+   583→                  )}
+   584→                >
+   585→                  {active && <Check className="h-3 w-3" aria-hidden="true" />}
+   586→                  {DIET_TAG_LABELS[tag]}
+   587→                </button>
+   588→              )
+   589→            })}
+   590→          </div>
+   591→          <p className="text-xs text-muted-foreground">Meal plans skip anything you mark here.</p>
+   592→        </div>
+   593→      </section>
+   594→
+   595→      {/* ------------------------------------------------------------ Training */}
+   596→      {!compact && (
+   597→        <section className="space-y-3" aria-label="Training preferences">
+   598→          <h3 className="text-xs font-semibold uppercase tracking-[0.16em] text-copper">Training</h3>
+   599→          <div className="grid grid-cols-2 gap-3">
+   600→            <div className="space-y-1.5">
+   601→              <Label htmlFor={`${formId}-level`}>Experience level</Label>
+   602→              <Select value={trainingLevel} onValueChange={handleTrainingLevelChange}>
+   603→                <SelectTrigger id={`${formId}-level`} className="w-full">
+   604→                  <SelectValue />
+   605→                </SelectTrigger>
+   606→                <SelectContent>
+   607→                  {LEVEL_OPTIONS.map((option) => (
+   608→                    <SelectItem key={option} value={option}>
+   609→                      {LEVEL_LABELS[option]}
+   610→                    </SelectItem>
+   611→                  ))}
+   612→                </SelectContent>
+   613→              </Select>
+   614→            </div>
+   615→            <div className="space-y-1.5">
+   616→              <Label htmlFor={`${formId}-training-goal`}>Training goal</Label>
+   617→              <Select value={trainingGoal} onValueChange={handleTrainingGoalChange}>
+   618→                <SelectTrigger id={`${formId}-training-goal`} className="w-full">
+   619→                  <SelectValue />
+   620→                </SelectTrigger>
+   621→                <SelectContent>
+   622→                  {TRAINING_GOAL_OPTIONS.map((option) => (
+   623→                    <SelectItem key={option} value={option}>
+   624→                      {TRAINING_GOAL_LABELS[option]}
+   625→                    </SelectItem>
+   626→                  ))}
+   627→                </SelectContent>
+   628→              </Select>
+   629→            </div>
+   630→          </div>
+   631→          <div className="space-y-2">
+   632→            <span id={`${formId}-equipment-label`} className="block text-sm font-medium leading-none">
+   633→              Available equipment
+   634→            </span>
+   635→            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+   636→              {EQUIPMENT_OPTIONS.map((item) => (
+   637→                <label
+   638→                  key={item}
+   639→                  className="flex cursor-pointer items-center gap-2 rounded-lg border border-white/8 bg-surface-raised px-2.5 py-2.5 text-xs text-muted-foreground transition-colors duration-150 hover:border-white/20 hover:text-foreground has-[button:focus-visible]:border-copper/50"
+   640→                >
+   641→                  <Checkbox
+   642→                    checked={equipment.includes(item)}
+   643→                    onCheckedChange={() => toggleEquipment(item)}
+   644→                    aria-label={EQUIPMENT_LABELS[item]}
+   645→                  />
+   646→                  {EQUIPMENT_LABELS[item]}
+   647→                </label>
+   648→              ))}
+   649→            </div>
+   650→          </div>
+   651→        </section>
+   652→      )}
+   653→
+   654→      {/* -------------------------------------------------------------- Footer */}
+   655→      <div className="flex items-center justify-end gap-2 pt-1">
+   656→        {onCancel !== undefined && (
+   657→          <Button type="button" variant="ghost" onClick={onCancel}>
+   658→            Cancel
+   659→          </Button>
+   660→        )}
+   661→        <Button
+   662→          type="submit"
+   663→          disabled={!isValid}
+   664→          className="bg-brand-blue text-white hover:bg-brand-blue/85"
+   665→        >
+   666→          Save profile
+   667→        </Button>
+   668→      </div>
+   669→    </form>
+   670→  )
+   671→}
+   672→

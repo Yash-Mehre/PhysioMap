@@ -23,6 +23,7 @@ import {
 } from '@/components/health/summary/SummaryPreview'
 import type { HealthSummarySnapshot } from '@/lib/pdf/healthSummary'
 import { buildNutritionSummary, isProfileComplete } from '@/lib/health/profileValidation'
+import { formatMedicalHistory } from '@/lib/health/medicalHistory'
 import { hydrationWeekSeries } from '@/lib/health/hydration'
 import { formatHeight, formatMl, formatWeight } from '@/lib/health/units'
 import { REGION_BY_ID } from '@/config/regions'
@@ -131,6 +132,10 @@ export function SummaryTab() {
               profile.excludedTags.length > 0
                 ? profile.excludedTags.map((tag) => DIET_TAG_LABELS[tag]).join(', ')
                 : 'None',
+            medicalHistoryLabel: formatMedicalHistory(
+              profile.medicalConditions,
+              profile.otherConditions,
+            ),
           }
         : null,
       bmi: sections.bmi

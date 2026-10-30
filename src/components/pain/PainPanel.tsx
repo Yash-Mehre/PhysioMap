@@ -4,7 +4,6 @@
 
 import { useState } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { DisclaimerBanner } from '@/components/layout/DisclaimerBanner'
 import { SymptomForm, type SymptomFormValues } from '@/components/pain/SymptomForm'
 import { AssessmentResult } from '@/components/pain/AssessmentResult'
 import { ReliefTab } from '@/components/pain/ReliefTab'
@@ -38,63 +37,57 @@ export function PainPanel({ content }: PainPanelProps) {
   }
 
   return (
-    <div className="space-y-3">
-      <div className="px-4 pt-3 sm:px-5 lg:hidden">
-        <DisclaimerBanner />
-      </div>
+    <Tabs defaultValue="assess" className="flex flex-col gap-4 px-4 py-4 sm:px-5">
+      <TabsList className="grid w-full grid-cols-5 bg-surface-raised/80">
+        <TabsTrigger value="assess" className="px-1 text-[11px] data-[state=active]:text-foreground">
+          Assess
+        </TabsTrigger>
+        <TabsTrigger value="relief" className="px-1 text-[11px] data-[state=active]:text-foreground">
+          Relief
+        </TabsTrigger>
+        <TabsTrigger value="ergonomics" className="px-1 text-[11px] data-[state=active]:text-foreground">
+          Desk
+        </TabsTrigger>
+        <TabsTrigger value="remedies" className="px-1 text-[11px] data-[state=active]:text-foreground">
+          Remedies
+        </TabsTrigger>
+        <TabsTrigger value="log" className="px-1 text-[11px] data-[state=active]:text-foreground">
+          Log
+        </TabsTrigger>
+      </TabsList>
 
-      <Tabs defaultValue="assess" className="flex flex-col gap-4 px-4 py-4 sm:px-5">
-        <TabsList className="grid w-full grid-cols-5 bg-surface-raised/80">
-          <TabsTrigger value="assess" className="px-1 text-[11px] data-[state=active]:text-foreground">
-            Assess
-          </TabsTrigger>
-          <TabsTrigger value="relief" className="px-1 text-[11px] data-[state=active]:text-foreground">
-            Relief
-          </TabsTrigger>
-          <TabsTrigger value="ergonomics" className="px-1 text-[11px] data-[state=active]:text-foreground">
-            Desk
-          </TabsTrigger>
-          <TabsTrigger value="remedies" className="px-1 text-[11px] data-[state=active]:text-foreground">
-            Remedies
-          </TabsTrigger>
-          <TabsTrigger value="log" className="px-1 text-[11px] data-[state=active]:text-foreground">
-            Log
-          </TabsTrigger>
-        </TabsList>
+      <TabsContent value="assess" className="mt-0 focus-visible:outline-none">
+        {assessment && assessmentInput ? (
+          <AssessmentResult
+            result={assessment}
+            input={assessmentInput}
+            regionId={content.region.id}
+            regionLabel={content.region.label}
+            onRestart={() => {
+              setAssessment(null)
+              setAssessmentInput(null)
+            }}
+          />
+        ) : (
+          <SymptomForm regionLabel={content.region.label} onSubmit={handleSubmit} />
+        )}
+      </TabsContent>
 
-        <TabsContent value="assess" className="mt-0 focus-visible:outline-none">
-          {assessment && assessmentInput ? (
-            <AssessmentResult
-              result={assessment}
-              input={assessmentInput}
-              regionId={content.region.id}
-              regionLabel={content.region.label}
-              onRestart={() => {
-                setAssessment(null)
-                setAssessmentInput(null)
-              }}
-            />
-          ) : (
-            <SymptomForm regionLabel={content.region.label} onSubmit={handleSubmit} />
-          )}
-        </TabsContent>
+      <TabsContent value="relief" className="mt-0 focus-visible:outline-none">
+        <ReliefTab content={content} />
+      </TabsContent>
 
-        <TabsContent value="relief" className="mt-0 focus-visible:outline-none">
-          <ReliefTab content={content} />
-        </TabsContent>
+      <TabsContent value="ergonomics" className="mt-0 focus-visible:outline-none">
+        <ErgonomicsTab content={content} />
+      </TabsContent>
 
-        <TabsContent value="ergonomics" className="mt-0 focus-visible:outline-none">
-          <ErgonomicsTab content={content} />
-        </TabsContent>
+      <TabsContent value="remedies" className="mt-0 focus-visible:outline-none">
+        <RemediesTab content={content} />
+      </TabsContent>
 
-        <TabsContent value="remedies" className="mt-0 focus-visible:outline-none">
-          <RemediesTab content={content} />
-        </TabsContent>
-
-        <TabsContent value="log" className="mt-0 focus-visible:outline-none">
-          <PainLogTab content={content} />
-        </TabsContent>
-      </Tabs>
-    </div>
+      <TabsContent value="log" className="mt-0 focus-visible:outline-none">
+        <PainLogTab content={content} />
+      </TabsContent>
+    </Tabs>
   )
 }

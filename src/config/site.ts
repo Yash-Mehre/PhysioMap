@@ -8,8 +8,6 @@ export const SITE = {
     'Tap a body part on a 3D muscular avatar to explore targeted training, pain relief guidance and interactive anatomy — all in one place.',
   team: 'Team Psycho-Coderz',
   event: 'Zinnovatio Hackathon',
-  disclaimerShort:
-    'PhysioMap offers educational guidance, not medical diagnosis or treatment. If symptoms are severe, worsening or urgent, seek professional care.',
   disclaimerLong:
     'PhysioMap offers educational guidance, not medical diagnosis or treatment. Guidance is general and may not apply to your condition — never ignore severe, worsening or urgent symptoms. In an emergency, contact local emergency services immediately.',
   steps: [

@@ -2,14 +2,16 @@
 
 /**
  * Friendly "Complete your profile" empty state shared by every Health Suite
- * tab that needs a complete profile (all except Profile itself).
+ * tab that needs a complete profile. Opens the header profile sheet in edit
+ * mode (no navigation).
  */
 
-import Link from 'next/link'
 import { ClipboardList } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { useProfilePanel } from '@/store/useProfilePanel'
 
 export function ProfileRequiredState() {
+  const openPanel = useProfilePanel((state) => state.openPanel)
   return (
     <div className="rounded-xl border border-dashed border-copper/30 bg-surface-raised/40 p-8 text-center">
       <span className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-full border border-copper/30 bg-surface">
@@ -20,8 +22,11 @@ export function ProfileRequiredState() {
         Add your age, height, weight, activity level and goal once — every calculator, meal plan and
         water target on this page fills in automatically.
       </p>
-      <Button asChild className="mt-4 bg-brand-blue text-white hover:bg-brand-blue/85">
-        <Link href="/health?tab=profile">Set up your profile</Link>
+      <Button
+        onClick={() => openPanel('edit')}
+        className="mt-4 bg-brand-blue text-white hover:bg-brand-blue/85"
+      >
+        Set up your profile
       </Button>
     </div>
   )
