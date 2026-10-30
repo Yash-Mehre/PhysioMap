@@ -21,6 +21,8 @@ export interface Exercise {
   cues: string[]
   commonMistakes: string[]
   biomechanics: string
+  /** Optional thumbnail, attached at runtime by the wger adapter when enabled. */
+  imageUrl?: string
 }
 
 export interface ReliefExercise {

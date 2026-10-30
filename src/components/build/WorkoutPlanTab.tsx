@@ -2,6 +2,7 @@
 
 /** My Workout tab: editable plan across regions with duration estimate + preview. */
 
+import Link from 'next/link'
 import { toast } from 'sonner'
 import {
   ArrowDown,
@@ -11,6 +12,7 @@ import {
   Clock,
   Eye,
   EyeOff,
+  FileDown,
   Minus,
   Plus,
   Trash2,
@@ -78,6 +80,13 @@ export function WorkoutPlanTab() {
           </span>
         </div>
         <div className="flex items-center gap-3">
+          <Link
+            href="/health?tab=summary"
+            className="flex touch-target items-center gap-1.5 rounded-full border border-copper/30 px-3.5 text-xs font-medium text-copper transition-colors duration-150 hover:border-copper/60 hover:bg-copper/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-copper"
+          >
+            <FileDown className="h-3.5 w-3.5" aria-hidden="true" />
+            Take it with you
+          </Link>
           <div className="flex items-center gap-2">
             <Switch
               id="preview-muscles"

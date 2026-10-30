@@ -13,4 +13,6 @@ export const STORAGE_KEYS = {
   disclaimerAck: `${PREFIX}:disclaimer-ack`,
   deskChecklist: `${PREFIX}:desk-checklist`,
   quizBest: `${PREFIX}:quiz-best`,
+  hydration: `${PREFIX}:hydration`,
+  mealPlan: `${PREFIX}:meal-plan`,
 } as const

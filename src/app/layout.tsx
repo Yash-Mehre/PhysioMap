@@ -15,13 +15,30 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://physiomap.example.com'),
   title: {
     default: `${SITE.name} — ${SITE.tagline}`,
     template: `%s · ${SITE.name}`,
   },
   description: SITE.description,
-  keywords: ["PhysioMap", "anatomy", "3D body map", "physiotherapy", "workouts", "pain relief", "ergonomics"],
+  keywords: ["PhysioMap", "anatomy", "3D body map", "physiotherapy", "workouts", "pain relief", "ergonomics", "nutrition", "meal planner", "BMI calculator"],
   applicationName: SITE.name,
+  authors: [{ name: SITE.team }],
+  openGraph: {
+    type: 'website',
+    siteName: SITE.name,
+    title: `${SITE.name} — ${SITE.tagline}`,
+    description: SITE.description,
+    url: '/',
+    images: [{ url: '/logo.svg', alt: `${SITE.name} logo` }],
+  },
+  twitter: {
+    card: 'summary',
+    title: `${SITE.name} — ${SITE.tagline}`,
+    description: SITE.description,
+    images: ['/logo.svg'],
+  },
+  robots: { index: true, follow: true },
 };
 
 export const viewport: Viewport = {

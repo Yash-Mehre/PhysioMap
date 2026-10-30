@@ -47,6 +47,36 @@ export type {
   WeightGoal,
 } from '@/types/profile'
 export { DEFAULT_PROFILE } from '@/types/profile'
+export type {
+  BmiBand,
+  BmiCategoryKey,
+  BmiCutoffs,
+  BmiResult,
+  DayPlan,
+  EnergyResults,
+  Food,
+  FoodDiet,
+  FoodRole,
+  FoodSearchResponse,
+  FoodSearchResult,
+  FoodSlot,
+  HealthDataStatus,
+  HealthProfileInput,
+  HydrationDayPoint,
+  HydrationEntry,
+  HydrationLog,
+  MacroTargets,
+  MealPlan,
+  MealSlotId,
+  MealSlotKind,
+  MealSlotPlan,
+  MealsPerDay,
+  NutritionSummary,
+  NutritionTargets,
+  PlannedFoodItem,
+  ProviderId,
+  ProviderStatus,
+} from '@/types/nutrition'
 export type { QuizKind, QuizPhase, QuizQuestion, QuizStatus } from '@/types/quiz'
 export type {
   AvatarCanvasProps,

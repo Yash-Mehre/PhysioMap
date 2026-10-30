@@ -1,20 +1,22 @@
 'use client'
 
 /**
- * Temporary landing hero (Message 2 replaces this page): tagline, three-step
- * chips and a slowly rotating avatar.
+ * Landing hero: pitch copy on the left, the live 3D avatar on the right.
+ * The hero canvas is the only WebGL canvas on the page — hover highlights the
+ * region under the pointer and clicking navigates to the explorer.
  */
 
-import { useMemo } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { ArrowRight, Compass, Hand, Loader2, Zap } from 'lucide-react'
+import { ArrowRight, Hand, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { createNeutralRegionStyles } from '@/types'
-import { MODES } from '@/config/theme'
-import { SITE } from '@/config/site'
 import { REGION_IDS } from '@/config/regions'
+import { HERO_CONTENT } from '@/config/landingContent'
+import type { RegionId, RegionVisualState } from '@/types'
 
 const AvatarCanvas = dynamic(() => import('@/components/avatar/AvatarCanvas'), {
   ssr: false,
@@ -25,11 +27,50 @@ const AvatarCanvas = dynamic(() => import('@/components/avatar/AvatarCanvas'), {
   ),
 })
 
-const STEP_ICONS = [Hand, Compass, Zap] as const
+/** Warm-peach glow applied to the region currently under the pointer. */
+const HOVER_REGION_STATE: RegionVisualState = {
+  tint: '#F3B38A',
+  emissive: '#F3B38A',
+  emissiveIntensity: 0.35,
+  opacity: 1,
+}
 
 export function LandingHero() {
+  const router = useRouter()
   const neutralStyles = useMemo(() => createNeutralRegionStyles(REGION_IDS), [])
-  const noop = useMemo(() => (): void => undefined, [])
+  const [hoveredRegionId, setHoveredRegionId] = useState<RegionId | null>(null)
+
+  const regionStyles = useMemo<Record<RegionId, RegionVisualState>>(
+    () =>
+      hoveredRegionId
+        ? { ...neutralStyles, [hoveredRegionId]: HOVER_REGION_STATE }
+        : neutralStyles,
+    [neutralStyles, hoveredRegionId],
+  )
+
+  const handleSelect = useCallback(
+    (regionId: RegionId | null): void => {
+      if (regionId) router.push(`/explore?mode=info&region=${regionId}`)
+    },
+    [router],
+  )
+
+  const handleHover = useCallback((regionId: RegionId | null): void => {
+    setHoveredRegionId(regionId)
+  }, [])
+
+  const handleOpenRegions = useCallback((): void => {
+    router.push('/explore')
+  }, [router])
+
+  const handleSecondaryCtaClick = useCallback((event: React.MouseEvent<HTMLAnchorElement>): void => {
+    event.preventDefault()
+    const element = document.getElementById(HERO_CONTENT.secondaryCtaHref.slice(1))
+    if (!element) return
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    element.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth' })
+    window.history.replaceState(null, '', HERO_CONTENT.secondaryCtaHref)
+  }, [])
 
   return (
     <div className="bg-grid relative overflow-hidden">
@@ -37,66 +78,48 @@ export function LandingHero() {
         aria-hidden="true"
         className="pointer-events-none absolute left-1/2 top-0 h-[480px] w-[820px] -translate-x-1/2 rounded-full bg-brand-blue/10 blur-[140px]"
       />
-      <section className="mx-auto grid w-full max-w-7xl items-center gap-6 px-4 pb-16 pt-10 sm:px-6 lg:grid-cols-2 lg:gap-4 lg:pb-24 lg:pt-16">
+      <section
+        id="top"
+        aria-labelledby="hero-heading"
+        className="mx-auto grid w-full max-w-7xl items-center gap-6 px-4 pb-16 pt-10 sm:px-6 lg:grid-cols-2 lg:gap-4 lg:pb-24 lg:pt-16"
+      >
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
           className="relative z-10 max-w-xl space-y-6"
         >
-          <p className="eyebrow">
-            {SITE.team} · {SITE.event}
-          </p>
-          <h1 className="font-heading text-4xl font-extrabold leading-[1.08] tracking-tight text-foreground sm:text-5xl lg:text-6xl">
-            See Your Body.
+          <p className="eyebrow">{HERO_CONTENT.eyebrow}</p>
+          <h1
+            id="hero-heading"
+            className="font-heading text-4xl font-extrabold leading-[1.08] tracking-tight text-foreground sm:text-5xl lg:text-6xl"
+          >
+            {HERO_CONTENT.titleLine1}
             <br />
             <span className="bg-gradient-to-r from-copper via-warm-peach to-copper bg-clip-text text-transparent">
-              Fix Your Body.
+              {HERO_CONTENT.titleLine2}
             </span>
           </h1>
           <div className="copper-rule" aria-hidden="true" />
-          <p className="text-base leading-relaxed text-muted-foreground sm:text-lg">
-            {SITE.pitch} Tap a body part, switch between training, pain relief and anatomy — one 3D muscle map,
-            three ways to act on it.
-          </p>
+          <p className="text-base leading-relaxed text-muted-foreground sm:text-lg">{HERO_CONTENT.subtitle}</p>
 
-          <div className="flex flex-wrap items-center gap-3">
-            <Button asChild size="lg" className="h-12 bg-brand-blue px-7 text-base font-semibold text-white hover:bg-brand-blue/85">
-              <Link href="/explore">
-                Launch PhysioMap
+          <div className="flex flex-wrap items-center gap-3 pt-1">
+            <Button
+              asChild
+              size="lg"
+              className="h-12 bg-brand-blue px-7 text-base font-semibold text-white hover:bg-brand-blue/85"
+            >
+              <Link href={HERO_CONTENT.primaryCtaHref}>
+                {HERO_CONTENT.primaryCta}
                 <ArrowRight className="ml-2 h-4.5 w-4.5" aria-hidden="true" />
               </Link>
             </Button>
-            <span className="text-xs text-muted-foreground">No sign-up · runs in your browser</span>
+            <Button asChild size="lg" variant="outline" className="h-12 border-white/15 px-7 text-base">
+              <a href={HERO_CONTENT.secondaryCtaHref} onClick={handleSecondaryCtaClick}>
+                {HERO_CONTENT.secondaryCta}
+              </a>
+            </Button>
           </div>
-
-          <ol className="flex flex-wrap gap-2.5 pt-1">
-            {SITE.steps.map((step, index) => {
-              const Icon = STEP_ICONS[index]
-              return (
-                <li
-                  key={step.id}
-                  className="flex items-center gap-2 rounded-full border border-white/10 bg-surface/80 px-3.5 py-2 text-xs font-medium text-muted-foreground backdrop-blur-sm"
-                >
-                  <Icon className="h-3.5 w-3.5 text-copper" aria-hidden="true" />
-                  {step.label}
-                  {index < SITE.steps.length - 1 ? (
-                    <ArrowRight className="h-3 w-3 text-muted-foreground/50" aria-hidden="true" />
-                  ) : null}
-                </li>
-              )
-            })}
-          </ol>
-
-          <ul className="flex flex-wrap gap-4 pt-2">
-            {MODES.map((mode) => (
-              <li key={mode.id} className="flex items-center gap-2 text-xs text-muted-foreground">
-                <span aria-hidden="true" className="h-2 w-2 rounded-full" style={{ backgroundColor: mode.color }} />
-                <span className="font-semibold text-foreground/90">{mode.label}</span>
-                <span className="hidden sm:inline">— {mode.tagline}</span>
-              </li>
-            ))}
-          </ul>
         </motion.div>
 
         <motion.div
@@ -111,18 +134,24 @@ export function LandingHero() {
           />
           <AvatarCanvas
             selectedRegionId={null}
-            hoveredRegionId={null}
-            regionStyles={neutralStyles}
+            hoveredRegionId={hoveredRegionId}
+            regionStyles={regionStyles}
             labelsVisible={false}
             silhouette={false}
-            interactive={false}
+            interactive={true}
             autoRotate={true}
             viewRequestView="front"
             viewRequestId={0}
-            onSelect={noop}
-            onHover={noop}
-            onOpenRegions={noop}
+            onSelect={handleSelect}
+            onHover={handleHover}
+            onOpenRegions={handleOpenRegions}
           />
+          <div className="pointer-events-none absolute bottom-4 left-1/2 z-10 -translate-x-1/2">
+            <span className="flex items-center gap-1.5 rounded-full border border-white/10 bg-background/80 px-3 py-1.5 text-xs font-medium text-muted-foreground backdrop-blur">
+              <Hand className="h-3.5 w-3.5 text-copper" aria-hidden="true" />
+              {HERO_CONTENT.hint}
+            </span>
+          </div>
         </motion.div>
       </section>
     </div>

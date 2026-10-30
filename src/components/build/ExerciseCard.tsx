@@ -1,6 +1,6 @@
 'use client'
 
-/** Exercise card with goal-based set scheme, muscle chips and hover highlights. */
+/** Exercise card with goal-based set scheme, muscle chips, optional wger thumbnail and hover highlights. */
 
 import { Info, Plus } from 'lucide-react'
 import { toast } from 'sonner'
@@ -11,6 +11,7 @@ import { REGION_BY_ID } from '@/config/regions'
 import { EQUIPMENT_LABELS, LEVEL_LABELS } from '@/config/labels'
 import { LEVEL_COLORS } from '@/config/theme'
 import { getSetScheme } from '@/lib/build/setSchemes'
+import { useExerciseImage } from '@/hooks/useExerciseImage'
 import { useExplorerStore } from '@/store/useExplorerStore'
 import { useWorkoutStore } from '@/store/useWorkoutStore'
 import type { Exercise, TrainingGoal } from '@/types'
@@ -25,6 +26,7 @@ export function ExerciseCard({ exercise, goal }: ExerciseCardProps) {
   const clearExerciseHighlight = useExplorerStore((state) => state.clearExerciseHighlight)
   const addItem = useWorkoutStore((state) => state.addItem)
   const scheme = getSetScheme(goal)
+  const imageUrl = useExerciseImage(exercise.name)
 
   const highlight = (): void =>
     setExerciseHighlight({
@@ -49,8 +51,17 @@ export function ExerciseCard({ exercise, goal }: ExerciseCardProps) {
       tabIndex={0}
       aria-label={`${exercise.name} exercise`}
     >
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
+      <div className="flex items-start gap-3">
+        {imageUrl ? (
+          <img
+            src={imageUrl}
+            alt=""
+            aria-hidden="true"
+            loading="lazy"
+            className="h-14 w-14 shrink-0 rounded-lg border border-white/10 object-cover"
+          />
+        ) : null}
+        <div className="min-w-0 flex-1">
           <h3 className="truncate text-sm font-semibold text-foreground">{exercise.name}</h3>
           <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-muted-foreground">
             <span

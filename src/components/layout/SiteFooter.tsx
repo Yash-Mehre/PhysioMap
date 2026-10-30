@@ -1,8 +1,9 @@
 import Link from 'next/link'
-import { Activity, ShieldAlert } from 'lucide-react'
+import { Activity, Database, ShieldAlert } from 'lucide-react'
 import { SITE, SITE_NAV } from '@/config/site'
 import { MODES } from '@/config/theme'
 import { FooterYear } from '@/components/layout/FooterYear'
+import { DataSourcesDialog } from '@/components/shared/DataSourcesDialog'
 
 /** Site footer with the permanent safety disclaimer and team credit. */
 export function SiteFooter() {
@@ -44,6 +45,15 @@ export function SiteFooter() {
             Important disclaimer
           </h2>
           <p className="text-sm leading-relaxed text-muted-foreground">{SITE.disclaimerLong}</p>
+          <DataSourcesDialog>
+            <button
+              type="button"
+              className="flex items-center gap-1.5 rounded-full border border-white/10 px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors duration-150 hover:border-copper/40 hover:text-copper focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-copper"
+            >
+              <Database className="h-3.5 w-3.5" aria-hidden="true" />
+              View data sources
+            </button>
+          </DataSourcesDialog>
         </div>
       </div>
       <div className="border-t border-white/8 py-4">
