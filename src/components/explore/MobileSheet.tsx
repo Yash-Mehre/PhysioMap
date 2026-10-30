@@ -3,23 +3,27 @@
 /**
  * Mobile bottom sheet with peek / half / full snap points. Custom-built on
  * framer-motion drag (handle-driven) so the avatar above stays interactive.
+ * Starts at peek so the body map stays visible; expands on `expandSignal`.
  */
 
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { animate, motion, useDragControls, useMotionValue } from 'framer-motion'
 import { cn } from '@/lib/utils'
 
 const SNAP_HEIGHTS = ['13dvh', '46dvh', '92dvh'] as const
 const DRAG_THRESHOLD = 42
+export const SHEET_SNAP = { peek: 0, half: 1, full: 2 } as const
 
 export interface MobileSheetProps {
   /** Sheet header summary (region name / mode chip) rendered in the peek area. */
   header: React.ReactNode
   children: React.ReactNode
+  /** When this value changes (non-null), the sheet expands to half. */
+  expandSignal?: string | null
 }
 
-export function MobileSheet({ header, children }: MobileSheetProps) {
-  const [snapIndex, setSnapIndex] = useState(1)
+export function MobileSheet({ header, children, expandSignal }: MobileSheetProps) {
+  const [snapIndex, setSnapIndex] = useState<number>(SHEET_SNAP.peek)
   const dragControls = useDragControls()
   const y = useMotionValue(0)
 
@@ -31,6 +35,14 @@ export function MobileSheet({ header, children }: MobileSheetProps) {
     },
     [y],
   )
+
+  // A new selection opens the sheet to half so details are visible.
+  // Deferred one frame (also keeps the setState out of the effect body).
+  useEffect(() => {
+    if (expandSignal == null) return
+    const frame = requestAnimationFrame(() => snapTo(SHEET_SNAP.half))
+    return () => cancelAnimationFrame(frame)
+  }, [expandSignal, snapTo])
 
   const handleDragEnd = useCallback(
     (_: unknown, info: { offset: { y: number } }) => {

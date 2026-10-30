@@ -20,6 +20,21 @@ import type { RegionId, RegionVisualState } from '@/types'
 
 const OUTLINE_SCALE = 1.04
 
+/**
+ * Silhouette toggle — module-scope mutation kernel so the component stays
+ * React-pure (three.js objects are mutable by design).
+ */
+function applySilhouette(
+  meshesByRegion: ReadonlyMap<RegionId, THREE.Mesh[]>,
+  silhouette: boolean,
+  regionStyles: Record<RegionId, RegionVisualState>,
+): void {
+  for (const [regionId, meshes] of meshesByRegion) {
+    const keepVisible = !silhouette || regionStyles[regionId]?.outline === true
+    for (const mesh of meshes) mesh.visible = keepVisible
+  }
+}
+
 export interface GltfAvatarProps {
   selectedRegionId: RegionId | null
   hoveredRegionId: RegionId | null

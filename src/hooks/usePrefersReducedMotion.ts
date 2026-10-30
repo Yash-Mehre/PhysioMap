@@ -1,17 +1,23 @@
-/** Reactive `prefers-reduced-motion` flag (SSR-safe). */
+/** Reactive `prefers-reduced-motion` flag (SSR-safe, hydration-safe). */
 
-import { useEffect, useState } from 'react'
+import { useSyncExternalStore } from 'react'
 
 const QUERY = '(prefers-reduced-motion: reduce)'
 
+function subscribe(callback: () => void): () => void {
+  const media = window.matchMedia(QUERY)
+  media.addEventListener('change', callback)
+  return () => media.removeEventListener('change', callback)
+}
+
+function getSnapshot(): boolean {
+  return window.matchMedia(QUERY).matches
+}
+
+function getServerSnapshot(): boolean {
+  return false
+}
+
 export function usePrefersReducedMotion(): boolean {
-  const [reduced, setReduced] = useState(false)
-  useEffect(() => {
-    const media = window.matchMedia(QUERY)
-    setReduced(media.matches)
-    const onChange = (event: MediaQueryListEvent): void => setReduced(event.matches)
-    media.addEventListener('change', onChange)
-    return () => media.removeEventListener('change', onChange)
-  }, [])
-  return reduced
+  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
 }

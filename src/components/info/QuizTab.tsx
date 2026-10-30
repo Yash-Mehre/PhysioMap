@@ -15,7 +15,6 @@ import { createQuiz } from '@/lib/quiz/quizEngine'
 import { useHydrated } from '@/hooks/useHydrated'
 import { useRegions } from '@/hooks/useRegionContent'
 import { useQuizStore } from '@/store/useQuizStore'
-import { useExplorerStore } from '@/store/useExplorerStore'
 import { cn } from '@/lib/utils'
 
 const FEEDBACK_DELAY_MS = 1500
@@ -36,15 +35,22 @@ export function QuizTab() {
   const answer = useQuizStore((state) => state.answer)
   const advance = useQuizStore((state) => state.advance)
   const reset = useQuizStore((state) => state.reset)
-  const selectRegion = useExplorerStore((state) => state.selectRegion)
 
   const question = status === 'active' ? (questions[index] ?? null) : null
 
+  // Leaving the quiz tab mid-session cancels the quiz so avatar clicks
+  // return to normal region selection immediately.
+  useEffect(() => {
+    return () => {
+      const quiz = useQuizStore.getState()
+      if (quiz.status === 'active') quiz.reset()
+    }
+  }, [])
+
   const handleStart = useCallback((): void => {
     if (!regions) return
-    selectRegion(null)
     start(createQuiz(Date.now() % 100000, regions))
-  }, [regions, start, selectRegion])
+  }, [regions, start])
 
   // Auto-advance after feedback.
   useEffect(() => {

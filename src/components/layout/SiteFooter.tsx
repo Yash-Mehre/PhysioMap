@@ -2,9 +2,11 @@ import Link from 'next/link'
 import { Activity, ShieldAlert } from 'lucide-react'
 import { SITE, SITE_NAV } from '@/config/site'
 import { MODES } from '@/config/theme'
+import { FooterYear } from '@/components/layout/FooterYear'
 
 /** Site footer with the permanent safety disclaimer and team credit. */
 export function SiteFooter() {
+  const serverYear = new Date().getFullYear()
   return (
     <footer className="mt-auto border-t border-white/8 bg-surface/60">
       <div className="mx-auto grid w-full max-w-7xl gap-8 px-4 py-10 sm:px-6 md:grid-cols-[1.2fr_1fr_1.4fr]">
@@ -46,7 +48,7 @@ export function SiteFooter() {
       </div>
       <div className="border-t border-white/8 py-4">
         <p className="mx-auto w-full max-w-7xl px-4 text-center text-xs text-muted-foreground/80 sm:px-6">
-          Built by {SITE.team} for the {SITE.event} · {SITE.name} {new Date().getFullYear()}
+          Built by {SITE.team} for the {SITE.event} · {SITE.name} <FooterYear fallbackYear={serverYear} />
         </p>
       </div>
     </footer>

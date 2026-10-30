@@ -17,11 +17,20 @@ import { GltfAvatar } from '@/components/avatar/GltfAvatar'
 import { RegionTooltip } from '@/components/avatar/RegionTooltip'
 import { WebGLFallback } from '@/components/avatar/WebGLFallback'
 import { CanvasErrorBoundary } from '@/components/avatar/CanvasErrorBoundary'
-import { detectWebGLSupport } from '@/hooks/useWebGLSupport'
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion'
 import type { AvatarCanvasProps } from '@/types'
 
 const MODEL_URL = process.env.NEXT_PUBLIC_AVATAR_MODEL_URL ?? ''
+
+/** WebGL capability detection — falls back to the searchable Region List. */
+function detectWebGLSupport(): boolean {
+  try {
+    const canvas = document.createElement('canvas')
+    return Boolean(canvas.getContext('webgl2') ?? canvas.getContext('webgl'))
+  } catch {
+    return false
+  }
+}
 
 export interface AvatarCanvasPropsWithView extends AvatarCanvasProps {
   /** View request routed from the explorer overlay buttons. */
@@ -45,7 +54,7 @@ export default function AvatarCanvas({
   viewRequestId,
   onOpenRegions,
 }: AvatarCanvasPropsWithView) {
-  const webglSupported = useMemo(detectWebGLSupport, [])
+  const webglSupported = useMemo(() => detectWebGLSupport(), [])
   const reducedMotion = usePrefersReducedMotion()
   const containerRef = useRef<HTMLDivElement>(null)
   const [pointer, setPointer] = useState<{ x: number; y: number } | null>(null)

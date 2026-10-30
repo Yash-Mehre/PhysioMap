@@ -2,19 +2,23 @@
 
 /** Ergonomics tab: region tips + the global desk-worker checklist with posture score. */
 
-import { useCallback, useEffect, useState } from 'react'
+import { useMemo } from 'react'
 import { Armchair, CheckCircle2, MonitorCheck } from 'lucide-react'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Progress } from '@/components/ui/progress'
 import { DESK_CHECKLIST } from '@/config/ergonomics'
 import { STORAGE_KEYS } from '@/config/storageKeys'
-import { readStoredValue, writeStoredValue } from '@/lib/storage/storage'
-import { useHydrated } from '@/hooks/useHydrated'
+import {
+  createLocalStorageStore,
+  useLocalStorageStoreValue,
+} from '@/lib/storage/localStorageStore'
 import type { RegionContent } from '@/types'
 
 export interface ErgonomicsTabProps {
   content: RegionContent
 }
+
+const deskChecklistStore = createLocalStorageStore<string[]>(STORAGE_KEYS.deskChecklist, [])
 
 function postureLabel(score: number): string {
   if (score >= 85) return 'Excellent desk setup'
@@ -23,23 +27,16 @@ function postureLabel(score: number): string {
 }
 
 export function ErgonomicsTab({ content }: ErgonomicsTabProps) {
-  const hydrated = useHydrated()
-  const [checked, setChecked] = useState<string[]>([])
+  const [checked, setChecked] = useLocalStorageStoreValue(deskChecklistStore)
 
-  useEffect(() => {
-    if (!hydrated) return
-    setChecked(readStoredValue<string[]>(STORAGE_KEYS.deskChecklist, []))
-  }, [hydrated])
+  const toggleItem = (id: string): void => {
+    setChecked(checked.includes(id) ? checked.filter((entry) => entry !== id) : [...checked, id])
+  }
 
-  const toggleItem = useCallback((id: string): void => {
-    setChecked((current) => {
-      const next = current.includes(id) ? current.filter((entry) => entry !== id) : [...current, id]
-      writeStoredValue(STORAGE_KEYS.deskChecklist, next)
-      return next
-    })
-  }, [])
-
-  const score = Math.round((checked.length / DESK_CHECKLIST.length) * 100)
+  const score = useMemo(
+    () => Math.round((checked.length / DESK_CHECKLIST.length) * 100),
+    [checked.length],
+  )
 
   return (
     <div className="space-y-5">

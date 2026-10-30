@@ -235,7 +235,7 @@ export function ExploreWorkspace() {
 
       {/* Mobile: bottom sheet panel */}
       <div className="lg:hidden">
-        <MobileSheet header={sheetHeader}>
+        <MobileSheet header={sheetHeader} expandSignal={selectedRegionId}>
           <div className="px-4 pt-3">
             <DisclaimerBanner />
           </div>

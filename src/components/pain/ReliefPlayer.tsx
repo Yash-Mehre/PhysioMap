@@ -56,10 +56,6 @@ export function ReliefPlayer({ exercise, children }: ReliefPlayerProps) {
   }, [])
 
   useEffect(() => {
-    if (!open) reset()
-  }, [open, reset])
-
-  useEffect(() => {
     if (!open || paused || duration === 0 || finished) return
     const timer = window.setInterval(() => setElapsed((value) => value + 1), 1000)
     return () => window.clearInterval(timer)
@@ -75,11 +71,12 @@ export function ReliefPlayer({ exercise, children }: ReliefPlayerProps) {
     setStepIndex((index) => Math.max(index - 1, 0))
   }, [])
 
-  // Auto-advance when a timed step completes.
+  // Auto-advance when a timed step completes (deferred through a timeout).
   useEffect(() => {
-    if (!open || duration === 0 || paused) return
-    if (elapsed >= duration && !isLast) goNext()
-  }, [elapsed, duration, isLast, open, paused, goNext])
+    if (!open || paused || duration === 0 || isLast || elapsed < duration) return
+    const timer = window.setTimeout(() => goNext(), 350)
+    return () => window.clearTimeout(timer)
+  }, [open, paused, duration, isLast, elapsed, goNext])
 
   const progress = duration > 0 ? Math.min(elapsed / duration, 1) : 0
   const remaining = duration > 0 ? Math.max(duration - elapsed, 0) : 0
