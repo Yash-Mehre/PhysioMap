@@ -86,6 +86,7 @@ export function applyRegionVisualStates(
   materials: ReadonlyMap<string, THREE.MeshStandardMaterial>,
   regionStyles: Record<RegionId, RegionVisualState>,
   outlineMaterial: THREE.MeshBasicMaterial,
+  opacityMultiplier = 1,
 ): VisualStateApplication {
   const pulsing = new Map<THREE.MeshStandardMaterial, number>()
   const outlinedRegionIds: RegionId[] = []
@@ -107,7 +108,7 @@ export function applyRegionVisualStates(
     material.color.copy(tmpColor)
     material.emissive.set(state.emissive)
     material.emissiveIntensity = state.emissiveIntensity
-    material.opacity = state.opacity
+    material.opacity = state.opacity * opacityMultiplier
 
     if (state.pulse && state.emissiveIntensity > 0) {
       pulsing.set(material, state.emissiveIntensity)

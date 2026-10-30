@@ -12,6 +12,8 @@ export interface MuscleMeshProps {
   interactive: boolean
   onSelect: (regionId: RegionId) => void
   onHover: (regionId: RegionId | null) => void
+  opacityMultiplier?: number
+  spread?: number
 }
 
 function toTuple(value: readonly [number, number, number] | undefined): [number, number, number] | undefined {
@@ -19,7 +21,15 @@ function toTuple(value: readonly [number, number, number] | undefined): [number,
   return [value[0], value[1], value[2]]
 }
 
-export function MuscleMesh({ definition, material, interactive, onSelect, onHover }: MuscleMeshProps) {
+export function MuscleMesh({
+  definition,
+  material,
+  interactive,
+  onSelect,
+  onHover,
+  opacityMultiplier = 1,
+  spread = 0,
+}: MuscleMeshProps) {
   const geometry = getSharedGeometry(definition.shape)
   const regionId = definition.regionId
 
@@ -45,7 +55,10 @@ export function MuscleMesh({ definition, material, interactive, onSelect, onHove
     <mesh
       geometry={geometry}
       material={material}
-      position={toTuple(definition.position)}
+      position={toTuple(definition.position)?.map((value, index, values) => {
+        const length = Math.hypot(values[0], values[1], values[2]) || 1
+        return value + (values[index] / length) * spread * 0.45
+      }) as [number, number, number] | undefined}
       rotation={toTuple(definition.rotation)}
       scale={toTuple(definition.scale)}
       {...handlers}

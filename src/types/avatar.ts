@@ -28,6 +28,10 @@ export interface AvatarCanvasProps {
   interactive?: boolean
   /** Slowly rotate the camera (landing hero). */
   autoRotate?: boolean
+  muscleOpacity?: number
+  organOpacity?: number
+  skeletonOpacity?: number
+  spreadStructures?: number
   onSelect: (regionId: RegionId | null) => void
   onHover: (regionId: RegionId | null) => void
 }

@@ -31,6 +31,10 @@ interface ExplorerState {
   regionsDrawerOpen: boolean
   exerciseHighlight: ExerciseHighlight
   workoutPreview: boolean
+  muscleOpacity: number
+  organOpacity: number
+  skeletonOpacity: number
+  spreadStructures: number
 
   setMode: (mode: AppMode) => void
   selectRegion: (regionId: RegionId | null) => void
@@ -44,6 +48,8 @@ interface ExplorerState {
   setExerciseHighlight: (highlight: ExerciseHighlight) => void
   clearExerciseHighlight: () => void
   setWorkoutPreview: (value: boolean) => void
+  setLayerOpacity: (layer: 'muscle' | 'organ' | 'skeleton', value: number) => void
+  setSpreadStructures: (value: number) => void
 }
 
 const EMPTY_HIGHLIGHT: ExerciseHighlight = {
@@ -66,6 +72,10 @@ export const useExplorerStore = create<ExplorerState>()((set) => ({
   regionsDrawerOpen: false,
   exerciseHighlight: EMPTY_HIGHLIGHT,
   workoutPreview: false,
+  muscleOpacity: 100,
+  organOpacity: 0,
+  skeletonOpacity: 0,
+  spreadStructures: 0,
 
   setMode: (mode) => set({ mode }),
   // Switching mode KEEPS the selected region — "same body part, three modes".
@@ -84,6 +94,12 @@ export const useExplorerStore = create<ExplorerState>()((set) => ({
   setExerciseHighlight: (highlight) => set({ exerciseHighlight: highlight }),
   clearExerciseHighlight: () => set({ exerciseHighlight: EMPTY_HIGHLIGHT }),
   setWorkoutPreview: (value) => set({ workoutPreview: value }),
+  setLayerOpacity: (layer, value) =>
+    set({
+      [layer === 'muscle' ? 'muscleOpacity' : layer === 'organ' ? 'organOpacity' : 'skeletonOpacity']:
+        Math.max(0, Math.min(100, value)),
+    }),
+  setSpreadStructures: (value) => set({ spreadStructures: Math.max(0, Math.min(100, value)) }),
 }))
 
 /** Selector helpers (stable references). */

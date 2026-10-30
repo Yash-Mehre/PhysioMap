@@ -53,6 +53,10 @@ export interface ProceduralAvatarProps {
   interactive: boolean
   onSelect: (regionId: RegionId) => void
   onHover: (regionId: RegionId | null) => void
+  muscleOpacity: number
+  organOpacity: number
+  skeletonOpacity: number
+  spreadStructures: number
 }
 
 function toTuple(value: readonly [number, number, number] | undefined): [number, number, number] | undefined {
@@ -76,6 +80,10 @@ export const ProceduralAvatar = memo(function ProceduralAvatar({
   interactive,
   onSelect,
   onHover,
+  muscleOpacity,
+  organOpacity,
+  skeletonOpacity,
+  spreadStructures,
 }: ProceduralAvatarProps) {
   const factory = useAvatarMaterialFactory()
   const reducedMotion = usePrefersReducedMotion()
@@ -111,6 +119,8 @@ export const ProceduralAvatar = memo(function ProceduralAvatar({
         interactive={false}
         onSelect={onSelect}
         onHover={onHover}
+        opacityMultiplier={muscleOpacity / 100}
+        spread={spreadStructures / 100}
       />
     ))
 
@@ -118,7 +128,11 @@ export const ProceduralAvatar = memo(function ProceduralAvatar({
       const definitions = DEFS_BY_REGION.get(regionId)
       if (!definitions || definitions.length === 0) return null
       return (
-        <group key={regionId} visible={!silhouette}>
+        <group
+          key={regionId}
+          visible={!silhouette}
+          position={[0, 0, 0]}
+        >
           {definitions.map((definition) => (
             <MuscleMesh
               key={definition.expandedId}
@@ -127,6 +141,8 @@ export const ProceduralAvatar = memo(function ProceduralAvatar({
               interactive={interactive}
               onSelect={onSelect}
               onHover={onHover}
+              opacityMultiplier={muscleOpacity / 100}
+              spread={spreadStructures / 100}
             />
           ))}
         </group>
@@ -139,15 +155,20 @@ export const ProceduralAvatar = memo(function ProceduralAvatar({
         {regions}
       </>
     )
-  }, [factory, interactive, onSelect, onHover, silhouette])
+  }, [factory, interactive, onSelect, onHover, silhouette, muscleOpacity, organOpacity, skeletonOpacity, spreadStructures])
 
   const pulsingRef = useRef<Map<THREE.MeshStandardMaterial, number>>(new Map())
 
   // Push visual states into materials imperatively.
   useEffect(() => {
-    const { pulsing } = applyRegionVisualStates(factory.entries(), regionStyles, outlineMaterial)
+    const { pulsing } = applyRegionVisualStates(
+      factory.entries(),
+      regionStyles,
+      outlineMaterial,
+      muscleOpacity / 100,
+    )
     pulsingRef.current = pulsing
-  }, [factory, regionStyles, outlineMaterial])
+  }, [factory, regionStyles, outlineMaterial, muscleOpacity])
 
   // Outline shells for outlined regions (usually just the selected one).
   const outlineShells = useMemo(() => {

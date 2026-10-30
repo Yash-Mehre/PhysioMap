@@ -44,6 +44,10 @@ export interface GltfAvatarProps {
   interactive: boolean
   onSelect: (regionId: RegionId) => void
   onHover: (regionId: RegionId | null) => void
+  muscleOpacity: number
+  organOpacity: number
+  skeletonOpacity: number
+  spreadStructures: number
 }
 
 export function GltfAvatar({
@@ -54,11 +58,19 @@ export function GltfAvatar({
   interactive,
   onSelect,
   onHover,
+  muscleOpacity,
+  organOpacity,
+  skeletonOpacity,
+  spreadStructures,
 }: GltfAvatarProps) {
   const url = process.env.NEXT_PUBLIC_AVATAR_MODEL_URL ?? ''
   const { scene } = useGLTF(url)
   const factory = useAvatarMaterialFactory()
   const reducedMotion = usePrefersReducedMotion()
+  void muscleOpacity
+  void organOpacity
+  void skeletonOpacity
+  void spreadStructures
 
   const outlineMaterial = useMemo(
     () =>
@@ -106,15 +118,48 @@ export function GltfAvatar({
 
   // Apply visual states + silhouette imperatively (mutation kernel in module scope).
   useEffect(() => {
-    applyRegionVisualStates(factory.entries(), regionStyles, outlineMaterial)
+    applyRegionVisualStates(factory.entries(), regionStyles, outlineMaterial, muscleOpacity / 100)
     applySilhouette(prepared.meshesByRegion, silhouette, regionStyles)
-  }, [factory, regionStyles, outlineMaterial, prepared, silhouette])
+    prepared.scene.traverse((object) => {
+      if (!(object instanceof THREE.Mesh)) return
+      const material = object.material as THREE.Material
+      const name = object.name.toLowerCase()
+      const layerOpacity = name.includes('organ')
+        ? organOpacity / 100
+        : name.includes('skeleton') || name.includes('bone')
+          ? skeletonOpacity / 100
+          : muscleOpacity / 100
+      material.transparent = layerOpacity < 1
+      material.opacity = layerOpacity
+      const basePosition =
+        (object.userData.basePosition as THREE.Vector3 | undefined) ??
+        object.position.clone()
+      object.userData.basePosition = basePosition
+      const direction = basePosition.clone().normalize()
+      object.position.copy(basePosition).addScaledVector(direction, (spreadStructures / 100) * 0.45)
+    })
+  }, [
+    factory,
+    regionStyles,
+    outlineMaterial,
+    prepared,
+    silhouette,
+    muscleOpacity,
+    organOpacity,
+    skeletonOpacity,
+    spreadStructures,
+  ])
 
   const pulsingRef = useRef<Map<THREE.MeshStandardMaterial, number>>(new Map())
   useEffect(() => {
-    const { pulsing } = applyRegionVisualStates(factory.entries(), regionStyles, outlineMaterial)
+    const { pulsing } = applyRegionVisualStates(
+      factory.entries(),
+      regionStyles,
+      outlineMaterial,
+      muscleOpacity / 100,
+    )
     pulsingRef.current = pulsing
-  }, [factory, regionStyles, outlineMaterial])
+  }, [factory, regionStyles, outlineMaterial, muscleOpacity])
 
   useFrame(({ clock }) => {
     const pulsing = pulsingRef.current

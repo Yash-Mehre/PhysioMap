@@ -66,7 +66,7 @@ export function SiteHeader() {
     href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(`${href}/`)
 
   return (
-    <header className="sticky top-0 z-40 border-b border-white/8 bg-background/80 backdrop-blur-md">
+    <header className="glass-panel sticky top-0 z-40 rounded-none border-x-0 border-t-0">
       <div className="flex h-16 w-full max-w-none items-center justify-between gap-3 px-3 sm:px-4">
         <Link
           href="/"

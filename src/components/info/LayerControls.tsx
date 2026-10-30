@@ -2,7 +2,8 @@
 
 /** Info-mode overlay: Isolate / Label all / Silhouette layer toggles. */
 
-import { Eye, Tags, PersonStanding } from 'lucide-react'
+import { Eye, Tags, PersonStanding, Sparkles } from 'lucide-react'
+import { Slider } from '@/components/ui/slider'
 import { useExplorerStore } from '@/store/useExplorerStore'
 import { cn } from '@/lib/utils'
 
@@ -19,6 +20,12 @@ export function LayerControls({ className }: { className?: string }) {
   const toggleIsolate = useExplorerStore((state) => state.toggleIsolate)
   const toggleLabels = useExplorerStore((state) => state.toggleLabels)
   const toggleSilhouette = useExplorerStore((state) => state.toggleSilhouette)
+  const muscleOpacity = useExplorerStore((state) => state.muscleOpacity)
+  const organOpacity = useExplorerStore((state) => state.organOpacity)
+  const skeletonOpacity = useExplorerStore((state) => state.skeletonOpacity)
+  const spreadStructures = useExplorerStore((state) => state.spreadStructures)
+  const setLayerOpacity = useExplorerStore((state) => state.setLayerOpacity)
+  const setSpreadStructures = useExplorerStore((state) => state.setSpreadStructures)
 
   const toggles = { isolate, labels: labelsVisible, silhouette }
   const actions = { isolate: toggleIsolate, labels: toggleLabels, silhouette: toggleSilhouette }
@@ -28,7 +35,7 @@ export function LayerControls({ className }: { className?: string }) {
       role="group"
       aria-label="Anatomy layer controls"
       className={cn(
-        'flex flex-col gap-1 rounded-2xl border border-white/10 bg-surface/85 p-1 shadow-lg backdrop-blur-md',
+        'glass-panel glass-glow flex w-52 flex-col gap-1 rounded-2xl p-1.5',
         className,
       )}
     >
@@ -53,6 +60,25 @@ export function LayerControls({ className }: { className?: string }) {
           </button>
         )
       })}
+      <div className="mt-1 space-y-2 border-t border-white/10 px-2.5 pb-2 pt-2">
+        <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-mode-info">
+          <Sparkles className="h-3 w-3" aria-hidden="true" /> Structure layers
+        </p>
+        {([
+          ['Muscles', muscleOpacity, 'muscle'],
+          ['Organs', organOpacity, 'organ'],
+          ['Skeleton', skeletonOpacity, 'skeleton'],
+        ] as const).map(([label, value, layer]) => (
+          <label key={layer} className="block text-[10px] text-muted-foreground">
+            <span className="mb-1 flex justify-between"><span>{label}</span><span>{value}%</span></span>
+            <Slider value={[value]} min={0} max={100} step={1} onValueChange={([next]) => setLayerOpacity(layer, next ?? value)} />
+          </label>
+        ))}
+        <label className="block text-[10px] text-muted-foreground">
+          <span className="mb-1 flex justify-between"><span>Spread structures</span><span>{spreadStructures}%</span></span>
+          <Slider value={[spreadStructures]} min={0} max={100} step={1} onValueChange={([next]) => setSpreadStructures(next ?? spreadStructures)} />
+        </label>
+      </div>
       <span className="sr-only" aria-live="polite">
         {`Isolate ${isolate ? 'on' : 'off'}, labels ${labelsVisible ? 'on' : 'off'}, silhouette ${silhouette ? 'on' : 'off'}`}
       </span>

@@ -1,4 +1,4 @@
-# PhysioMap — *See Your Body. Fix Your Body.*
+# PhysioMap V-1.0.1.107 — *See Your Body. Fix Your Body.*
 
 PhysioMap turns your body into an **interactive 3D guide**. Tap a body part on a 3D muscular
 avatar and act on it in three ways — **Build** (hypertrophy, targeted workouts, biomechanics),
@@ -8,6 +8,13 @@ Suite** (calculators, India-friendly meal plans, hydration tracking, PDF summary
 beyond the body map.
 
 Built by **Team Psycho-Coderz** for the **Zinnovatio Hackathon**.
+
+The interface uses a glassmorphism design system with frosted panels, translucent
+navigation, soft borders, backdrop blur, and mode-colored glow accents. In Info
+mode, Structure layers exposes independent Muscles, Organs, Skeleton, and
+Spread structures controls. The procedural avatar remains the default offline
+fallback; a higher-fidelity GLTF can be supplied through
+`NEXT_PUBLIC_AVATAR_MODEL_URL`.
 
 > **Safety:** PhysioMap offers educational guidance, **not medical diagnosis or treatment**.
 > Guidance is general and may not apply to your condition — never ignore severe, worsening or

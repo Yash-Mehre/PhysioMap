@@ -39,6 +39,10 @@ export interface AvatarCanvasPropsWithView extends AvatarCanvasProps {
   /** Fallback hook for the WebGL-less path. */
   onOpenRegions: () => void
   showTooltip?: boolean
+  muscleOpacity?: number
+  organOpacity?: number
+  skeletonOpacity?: number
+  spreadStructures?: number
 }
 
 export default function AvatarCanvas({
@@ -55,6 +59,10 @@ export default function AvatarCanvas({
   viewRequestId,
   onOpenRegions,
   showTooltip = true,
+  muscleOpacity = 100,
+  organOpacity = 0,
+  skeletonOpacity = 0,
+  spreadStructures = 0,
 }: AvatarCanvasPropsWithView) {
   const webglSupported = useMemo(() => detectWebGLSupport(), [])
   const reducedMotion = usePrefersReducedMotion()
@@ -128,6 +136,10 @@ export default function AvatarCanvas({
               interactive={interactive}
               onSelect={onSelect}
               onHover={onHover}
+              muscleOpacity={muscleOpacity}
+              organOpacity={organOpacity}
+              skeletonOpacity={skeletonOpacity}
+              spreadStructures={spreadStructures}
             />
           ) : (
             <ProceduralAvatar
@@ -139,6 +151,10 @@ export default function AvatarCanvas({
               interactive={interactive}
               onSelect={onSelect}
               onHover={onHover}
+              muscleOpacity={muscleOpacity}
+              organOpacity={organOpacity}
+              skeletonOpacity={skeletonOpacity}
+              spreadStructures={spreadStructures}
             />
           )}
 
