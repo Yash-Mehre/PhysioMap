@@ -12,7 +12,6 @@ export interface MuscleMeshProps {
   interactive: boolean
   onSelect: (regionId: RegionId) => void
   onHover: (regionId: RegionId | null) => void
-  opacityMultiplier?: number
   spread?: number
 }
 
@@ -27,7 +26,6 @@ export function MuscleMesh({
   interactive,
   onSelect,
   onHover,
-  opacityMultiplier = 1,
   spread = 0,
 }: MuscleMeshProps) {
   const geometry = getSharedGeometry(definition.shape)

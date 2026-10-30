@@ -54,7 +54,6 @@ export interface ProceduralAvatarProps {
   onSelect: (regionId: RegionId) => void
   onHover: (regionId: RegionId | null) => void
   muscleOpacity: number
-  organOpacity: number
   skeletonOpacity: number
   spreadStructures: number
 }
@@ -81,7 +80,6 @@ export const ProceduralAvatar = memo(function ProceduralAvatar({
   onSelect,
   onHover,
   muscleOpacity,
-  organOpacity,
   skeletonOpacity,
   spreadStructures,
 }: ProceduralAvatarProps) {
@@ -119,7 +117,6 @@ export const ProceduralAvatar = memo(function ProceduralAvatar({
         interactive={false}
         onSelect={onSelect}
         onHover={onHover}
-        opacityMultiplier={muscleOpacity / 100}
         spread={spreadStructures / 100}
       />
     ))
@@ -141,7 +138,6 @@ export const ProceduralAvatar = memo(function ProceduralAvatar({
               interactive={interactive}
               onSelect={onSelect}
               onHover={onHover}
-              opacityMultiplier={muscleOpacity / 100}
               spread={spreadStructures / 100}
             />
           ))}
@@ -155,7 +151,7 @@ export const ProceduralAvatar = memo(function ProceduralAvatar({
         {regions}
       </>
     )
-  }, [factory, interactive, onSelect, onHover, silhouette, muscleOpacity, organOpacity, skeletonOpacity, spreadStructures])
+  }, [factory, interactive, onSelect, onHover, silhouette, muscleOpacity, skeletonOpacity, spreadStructures])
 
   const pulsingRef = useRef<Map<THREE.MeshStandardMaterial, number>>(new Map())
 

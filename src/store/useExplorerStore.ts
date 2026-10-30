@@ -32,7 +32,6 @@ interface ExplorerState {
   exerciseHighlight: ExerciseHighlight
   workoutPreview: boolean
   muscleOpacity: number
-  organOpacity: number
   skeletonOpacity: number
   spreadStructures: number
 
@@ -48,7 +47,7 @@ interface ExplorerState {
   setExerciseHighlight: (highlight: ExerciseHighlight) => void
   clearExerciseHighlight: () => void
   setWorkoutPreview: (value: boolean) => void
-  setLayerOpacity: (layer: 'muscle' | 'organ' | 'skeleton', value: number) => void
+  setLayerOpacity: (layer: 'muscle' | 'skeleton', value: number) => void
   setSpreadStructures: (value: number) => void
 }
 
@@ -73,8 +72,7 @@ export const useExplorerStore = create<ExplorerState>()((set) => ({
   exerciseHighlight: EMPTY_HIGHLIGHT,
   workoutPreview: false,
   muscleOpacity: 100,
-  organOpacity: 0,
-  skeletonOpacity: 0,
+  skeletonOpacity: 100,
   spreadStructures: 0,
 
   setMode: (mode) => set({ mode }),
@@ -96,7 +94,7 @@ export const useExplorerStore = create<ExplorerState>()((set) => ({
   setWorkoutPreview: (value) => set({ workoutPreview: value }),
   setLayerOpacity: (layer, value) =>
     set({
-      [layer === 'muscle' ? 'muscleOpacity' : layer === 'organ' ? 'organOpacity' : 'skeletonOpacity']:
+      [layer === 'muscle' ? 'muscleOpacity' : 'skeletonOpacity']:
         Math.max(0, Math.min(100, value)),
     }),
   setSpreadStructures: (value) => set({ spreadStructures: Math.max(0, Math.min(100, value)) }),

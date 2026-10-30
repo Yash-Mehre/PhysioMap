@@ -45,7 +45,6 @@ export interface GltfAvatarProps {
   onSelect: (regionId: RegionId) => void
   onHover: (regionId: RegionId | null) => void
   muscleOpacity: number
-  organOpacity: number
   skeletonOpacity: number
   spreadStructures: number
 }
@@ -59,7 +58,6 @@ export function GltfAvatar({
   onSelect,
   onHover,
   muscleOpacity,
-  organOpacity,
   skeletonOpacity,
   spreadStructures,
 }: GltfAvatarProps) {
@@ -68,7 +66,6 @@ export function GltfAvatar({
   const factory = useAvatarMaterialFactory()
   const reducedMotion = usePrefersReducedMotion()
   void muscleOpacity
-  void organOpacity
   void skeletonOpacity
   void spreadStructures
 
@@ -94,7 +91,8 @@ export function GltfAvatar({
       if (!(object instanceof THREE.Mesh)) return
       const regionId = resolveGltfRegion(object.name)
       if (!regionId) {
-        object.material = factory.get(null, 'underlay-muscle')
+        const isBone = /bone|skeleton|skull|rib|vertebra|spine|femur|tibia|humerus/i.test(object.name)
+        object.material = factory.get(null, isBone ? 'bone' : 'underlay-muscle')
         object.userData.regionId = null
         return
       }
@@ -124,11 +122,11 @@ export function GltfAvatar({
       if (!(object instanceof THREE.Mesh)) return
       const material = object.material as THREE.Material
       const name = object.name.toLowerCase()
-      const layerOpacity = name.includes('organ')
-        ? organOpacity / 100
-        : name.includes('skeleton') || name.includes('bone')
-          ? skeletonOpacity / 100
-          : muscleOpacity / 100
+      const layerOpacity = name.includes('skeleton') || name.includes('bone') || name.includes('skull') ||
+        name.includes('rib') || name.includes('vertebra') || name.includes('spine') ||
+        name.includes('femur') || name.includes('tibia') || name.includes('humerus')
+        ? skeletonOpacity / 100
+        : muscleOpacity / 100
       material.transparent = layerOpacity < 1
       material.opacity = layerOpacity
       const basePosition =
@@ -145,7 +143,6 @@ export function GltfAvatar({
     prepared,
     silhouette,
     muscleOpacity,
-    organOpacity,
     skeletonOpacity,
     spreadStructures,
   ])

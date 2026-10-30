@@ -40,7 +40,6 @@ export interface AvatarCanvasPropsWithView extends AvatarCanvasProps {
   onOpenRegions: () => void
   showTooltip?: boolean
   muscleOpacity?: number
-  organOpacity?: number
   skeletonOpacity?: number
   spreadStructures?: number
 }
@@ -60,7 +59,6 @@ export default function AvatarCanvas({
   onOpenRegions,
   showTooltip = true,
   muscleOpacity = 100,
-  organOpacity = 0,
   skeletonOpacity = 0,
   spreadStructures = 0,
 }: AvatarCanvasPropsWithView) {
@@ -93,7 +91,7 @@ export default function AvatarCanvas({
   return (
     <div
       ref={containerRef}
-      className={`relative h-full w-full ${hoveredRegionId !== null && interactive ? 'cursor-pointer' : 'cursor-grab'}`}
+      className={`atlas-canvas relative h-full w-full ${hoveredRegionId !== null && interactive ? 'cursor-pointer' : 'cursor-grab'}`}
       onPointerMove={handlePointerMove}
       onPointerLeave={handlePointerLeave}
       role="img"
@@ -137,7 +135,6 @@ export default function AvatarCanvas({
               onSelect={onSelect}
               onHover={onHover}
               muscleOpacity={muscleOpacity}
-              organOpacity={organOpacity}
               skeletonOpacity={skeletonOpacity}
               spreadStructures={spreadStructures}
             />
@@ -152,7 +149,6 @@ export default function AvatarCanvas({
               onSelect={onSelect}
               onHover={onHover}
               muscleOpacity={muscleOpacity}
-              organOpacity={organOpacity}
               skeletonOpacity={skeletonOpacity}
               spreadStructures={spreadStructures}
             />

@@ -87,7 +87,6 @@ function ExploreWorkspaceContent({ embedded }: { embedded: boolean }) {
   const isolate = useExplorerStore((state) => state.isolate)
   const silhouette = useExplorerStore((state) => state.silhouette)
   const muscleOpacity = useExplorerStore((state) => state.muscleOpacity)
-  const organOpacity = useExplorerStore((state) => state.organOpacity)
   const skeletonOpacity = useExplorerStore((state) => state.skeletonOpacity)
   const spreadStructures = useExplorerStore((state) => state.spreadStructures)
   const cameraView = useExplorerStore((state) => state.cameraView)
@@ -250,7 +249,6 @@ function ExploreWorkspaceContent({ embedded }: { embedded: boolean }) {
             onHover={setHoveredRegion}
             onOpenRegions={openRegionsBrowser}
             muscleOpacity={muscleOpacity}
-            organOpacity={organOpacity}
             skeletonOpacity={skeletonOpacity}
             spreadStructures={spreadStructures}
           />

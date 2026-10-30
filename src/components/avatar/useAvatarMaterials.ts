@@ -11,26 +11,31 @@ import { AVATAR_COLORS } from '@/config/theme'
 import { getFiberBumpTexture } from '@/components/avatar/geometry'
 import type { RegionId, RegionVisualState } from '@/types'
 
-export const KIND_BASE_COLORS: Record<MuscleMaterialKind, string> = {
+export const KIND_BASE_COLORS: Record<MuscleMaterialKind | 'bone', string> = {
   muscle: AVATAR_COLORS.muscle,
   tendon: AVATAR_COLORS.tendon,
   'underlay-muscle': AVATAR_COLORS.underlayMuscle,
   'underlay-grey': AVATAR_COLORS.underlayGrey,
+  bone: '#d8d0bb',
 }
 
 const TINT_MIX = 0.55
 const tmpColor = new THREE.Color()
 const tintColor = new THREE.Color()
 
-function createBaseMaterial(kind: MuscleMaterialKind): THREE.MeshStandardMaterial {
+function createBaseMaterial(kind: MuscleMaterialKind | 'bone'): THREE.MeshStandardMaterial {
   const material = new THREE.MeshStandardMaterial({
     color: KIND_BASE_COLORS[kind],
-    roughness: kind === 'muscle' ? 0.55 : kind === 'tendon' ? 0.6 : 0.78,
-    metalness: 0.04,
+    roughness: kind === 'bone' ? 0.88 : kind === 'muscle' ? 0.48 : kind === 'tendon' ? 0.6 : 0.78,
+    metalness: kind === 'bone' ? 0.02 : 0.04,
   })
   if (kind === 'muscle') {
     material.bumpMap = getFiberBumpTexture()
     material.bumpScale = 0.02
+  }
+  if (kind === 'bone') {
+    material.bumpMap = getFiberBumpTexture()
+    material.bumpScale = 0.035
   }
   // Region materials fade for isolate/silhouette; underlay stays opaque.
   material.transparent = kind === 'muscle' || kind === 'tendon'
@@ -39,7 +44,7 @@ function createBaseMaterial(kind: MuscleMaterialKind): THREE.MeshStandardMateria
 
 export interface AvatarMaterialFactory {
   /** Get (lazily creating) the shared material for a region + material kind. */
-  get: (regionId: RegionId | null, kind: MuscleMaterialKind) => THREE.MeshStandardMaterial
+  get: (regionId: RegionId | null, kind: MuscleMaterialKind | 'bone') => THREE.MeshStandardMaterial
   /** All materials created so far (key: `${regionId}:${kind}` or `underlay:${kind}`). */
   entries: () => ReadonlyMap<string, THREE.MeshStandardMaterial>
 }
@@ -96,7 +101,7 @@ export function applyRegionVisualStates(
     if (key.startsWith('underlay:')) continue
     const separator = key.indexOf(':')
     const regionId = key.slice(0, separator) as RegionId
-    const kind = key.slice(separator + 1) as MuscleMaterialKind
+    const kind = key.slice(separator + 1) as MuscleMaterialKind | 'bone'
     const state = regionStyles[regionId]
     if (!state) continue
 

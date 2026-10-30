@@ -21,7 +21,6 @@ export function LayerControls({ className }: { className?: string }) {
   const toggleLabels = useExplorerStore((state) => state.toggleLabels)
   const toggleSilhouette = useExplorerStore((state) => state.toggleSilhouette)
   const muscleOpacity = useExplorerStore((state) => state.muscleOpacity)
-  const organOpacity = useExplorerStore((state) => state.organOpacity)
   const skeletonOpacity = useExplorerStore((state) => state.skeletonOpacity)
   const spreadStructures = useExplorerStore((state) => state.spreadStructures)
   const setLayerOpacity = useExplorerStore((state) => state.setLayerOpacity)
@@ -62,12 +61,11 @@ export function LayerControls({ className }: { className?: string }) {
       })}
       <div className="mt-1 space-y-2 border-t border-white/10 px-2.5 pb-2 pt-2">
         <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-mode-info">
-          <Sparkles className="h-3 w-3" aria-hidden="true" /> Structure layers
+          <Sparkles className="h-3 w-3" aria-hidden="true" /> Atlas layers
         </p>
         {([
           ['Muscles', muscleOpacity, 'muscle'],
-          ['Organs', organOpacity, 'organ'],
-          ['Skeleton', skeletonOpacity, 'skeleton'],
+          ['Bones', skeletonOpacity, 'skeleton'],
         ] as const).map(([label, value, layer]) => (
           <label key={layer} className="block text-[10px] text-muted-foreground">
             <span className="mb-1 flex justify-between"><span>{label}</span><span>{value}%</span></span>
@@ -75,7 +73,7 @@ export function LayerControls({ className }: { className?: string }) {
           </label>
         ))}
         <label className="block text-[10px] text-muted-foreground">
-          <span className="mb-1 flex justify-between"><span>Spread structures</span><span>{spreadStructures}%</span></span>
+          <span className="mb-1 flex justify-between"><span>Spread structures apart</span><span>{spreadStructures}%</span></span>
           <Slider value={[spreadStructures]} min={0} max={100} step={1} onValueChange={([next]) => setSpreadStructures(next ?? spreadStructures)} />
         </label>
       </div>

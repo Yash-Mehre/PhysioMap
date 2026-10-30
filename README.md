@@ -11,9 +11,10 @@ Built by **Team Psycho-Coderz** for the **Zinnovatio Hackathon**.
 
 The interface uses a glassmorphism design system with frosted panels, translucent
 navigation, soft borders, backdrop blur, and mode-colored glow accents. In Info
-mode, Structure layers exposes independent Muscles, Organs, Skeleton, and
-Spread structures controls. The procedural avatar remains the default offline
-fallback; a higher-fidelity GLTF can be supplied through
+mode, Structure layers exposes only independent Muscles, Bones, and Spread
+structures controls. The procedural avatar remains the default offline
+muscle fallback; a verified medical-atlas GLTF/GLB with skeletal meshes can be
+supplied through
 `NEXT_PUBLIC_AVATAR_MODEL_URL`.
 
 > **Safety:** PhysioMap offers educational guidance, **not medical diagnosis or treatment**.
@@ -26,9 +27,13 @@ fallback; a higher-fidelity GLTF can be supplied through
 
 ### The 3D explorer (`/explore`)
 
-- **3D procedural anatomical avatar** — a data-driven "muscle man" (≈70 shared-geometry meshes)
+- **3D anatomical avatar** — a data-driven procedural muscle fallback (≈70 shared-geometry meshes)
   with 19 clickable regions, hover tooltips, region outlines, camera fly-to presets, auto-rotate,
   isolate / label-all / silhouette layers, and a WebGL-free fallback.
+  When a supplied GLTF includes meshes named for bones, skull, ribs, vertebrae, spine, femur,
+  tibia, or humerus, those meshes receive the dedicated high-roughness bone material and
+  independent Bones opacity control. The renderer does not fabricate medical anatomy when no
+  verified skeletal asset is configured.
 - **Build mode (blue)** — 5 exercises per region with goal-based set schemes
   (hypertrophy 3–4 × 8–12, strength 4–5 × 3–6, endurance 2–3 × 15–20), exercise detail dialogs,
   muscle-science tab with hypertrophy guides + synergist/antagonist chips, and a persisted
