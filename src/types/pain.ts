@@ -82,11 +82,27 @@ export interface ScoredAssociation {
   matchedAggravators: Aggravator[]
 }
 
+/** Region- and input-specific guidance produced by the guidance composer. */
+export interface PainGuidance {
+  /** One urgency headline naming the region and its specialist. */
+  headline: string
+  /** Immediate actions (1–3 lines). */
+  doNow: string[]
+  /** Things to avoid (1–3 lines). */
+  avoid: string[]
+  /** Symptoms that would make it worse (1–3 lines). */
+  watchFor: string[]
+  /** Follow-up plan quoting the user's own numbers (1–3 lines). */
+  followUp: string[]
+  /** Short chips summarising the user's inputs. */
+  basedOn: string[]
+}
+
 export interface PainAssessmentResult {
   urgency: PainUrgency
   redFlags: RedFlagKey[]
   associations: ScoredAssociation[]
-  nextSteps: string[]
+  guidance: PainGuidance
 }
 
 export interface PainLogEntry {
@@ -96,4 +112,9 @@ export interface PainLogEntry {
   severity: number
   sensations: Sensation[]
   urgency: PainUrgency | null
+  onset?: PainOnset
+  duration?: PainDuration
+  aggravators?: Aggravator[]
+  redFlags?: RedFlagKey[]
+  result?: PainAssessmentResult
 }

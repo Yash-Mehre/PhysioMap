@@ -10,6 +10,9 @@
     "db:push": "prisma db push --accept-data-loss",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "db:clear": "node scripts/clear-local-data.cjs",
+    "delelog": "node scripts/clear-local-data.cjs",
     "db:reset": "prisma migrate reset",
     "type-check": "tsc --noEmit",
     "test": "vitest run"

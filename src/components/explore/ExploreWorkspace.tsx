@@ -11,8 +11,6 @@ import dynamic from 'next/dynamic'
 import { List, Loader2, MousePointerClick, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
-import { DisclaimerBanner } from '@/components/layout/DisclaimerBanner'
-import { DisclaimerGate } from '@/components/layout/DisclaimerGate'
 import { ModeSwitcher } from '@/components/layout/ModeSwitcher'
 import { ViewControls } from '@/components/avatar/ViewControls'
 import { LayerControls } from '@/components/info/LayerControls'
@@ -27,6 +25,10 @@ import { useRegionVisualState } from '@/hooks/useRegionVisualState'
 import { useUrlSync } from '@/hooks/useUrlSync'
 import { useExplorerStore } from '@/store/useExplorerStore'
 import { useQuizStore } from '@/store/useQuizStore'
+import { useHydrated } from '@/hooks/useHydrated'
+import { isProfileComplete } from '@/lib/health/profileValidation'
+import { useProfileStore } from '@/store/useProfileStore'
+import { ProfileRequiredState } from '@/components/health/ProfileRequiredState'
 import type { RegionId } from '@/types'
 
 const AvatarCanvas = dynamic(() => import('@/components/avatar/AvatarCanvas'), {
@@ -45,7 +47,35 @@ const AvatarCanvas = dynamic(() => import('@/components/avatar/AvatarCanvas'), {
 
 const MODE_LABELS = { build: 'Build', pain: 'Pain', info: 'Info' } as const
 
-export function ExploreWorkspace() {
+export function ExploreWorkspace({ embedded = false }: { embedded?: boolean }) {
+  const hydrated = useHydrated()
+  const profile = useProfileStore((state) => state.profile)
+
+  if (!hydrated) {
+    return <div className="h-full min-h-[420px] animate-pulse bg-background" aria-busy="true" />
+  }
+
+  if (!isProfileComplete(profile)) {
+    return (
+      <div
+        className={
+          embedded
+            ? 'min-h-[520px] bg-background p-6'
+            : 'flex flex-1 items-center justify-center bg-background p-6'
+        }
+      >
+        <ProfileRequiredState
+          title="Set up your profile to explore"
+          description="Create your local profile first so Build, Pain and personalized recommendations can use your goals and safety information. Your profile stays on this device."
+        />
+      </div>
+    )
+  }
+
+  return <ExploreWorkspaceContent embedded={embedded} />
+}
+
+function ExploreWorkspaceContent({ embedded }: { embedded: boolean }) {
   useUrlSync()
   useKeyboardShortcuts()
   usePrefetchRegions()
@@ -110,9 +140,11 @@ export function ExploreWorkspace() {
   }, [mode, selectedRegionId])
 
   return (
-    <div className="flex h-[calc(100dvh-4rem)] w-full overflow-hidden">
-      <DisclaimerGate />
-
+    <div
+      className={`flex w-full overflow-hidden ${
+        embedded ? 'h-[min(900px,calc(100dvh-4rem))] min-h-[680px]' : 'h-[calc(100dvh-4rem)]'
+      }`}
+    >
       {/* Left: region list (desktop) */}
       {listOpenDesktop ? (
         <aside
@@ -145,7 +177,9 @@ export function ExploreWorkspace() {
               variant="outline"
               size="sm"
               onClick={openRegionsBrowser}
-              className="border-white/15 bg-surface/85 text-muted-foreground backdrop-blur-md hover:text-foreground lg:hidden"
+              className={`border-white/15 bg-surface/85 text-muted-foreground backdrop-blur-md hover:text-foreground ${
+                listOpenDesktop ? 'lg:hidden' : ''
+              }`}
             >
               <List className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" /> Regions
             </Button>
@@ -154,12 +188,12 @@ export function ExploreWorkspace() {
           <div aria-hidden="true" className="w-[72px] sm:w-[124px]" />
         </div>
 
-        {mode === 'info' ? (
+        {mode === 'info' && !quizActive ? (
           <LayerControls className="absolute right-3 top-[5.5rem] z-20 sm:top-24" />
         ) : null}
 
         {/* Selected region chip */}
-        {selectedRegionId ? (
+        {selectedRegionId && !quizActive ? (
           <div className="absolute left-1/2 top-[4.2rem] z-20 -translate-x-1/2 sm:top-[4.6rem]">
             <span
               className="flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs font-semibold text-foreground shadow-lg backdrop-blur-md"
@@ -181,14 +215,14 @@ export function ExploreWorkspace() {
               </button>
             </span>
           </div>
-        ) : (
+        ) : !quizActive ? (
           <div className="pointer-events-none absolute bottom-[118px] left-1/2 z-10 -translate-x-1/2 lg:bottom-8">
             <span className="flex items-center gap-1.5 whitespace-nowrap rounded-full border border-white/10 bg-surface/85 px-3.5 py-1.5 text-xs text-muted-foreground shadow-lg backdrop-blur-md">
               <MousePointerClick className="h-3.5 w-3.5 text-copper" aria-hidden="true" />
               Tap a body part to begin
             </span>
           </div>
-        )}
+        ) : null}
 
         <div className="absolute bottom-3 left-1/2 z-10 hidden -translate-x-1/2 lg:block">
           <ViewControls />
@@ -202,8 +236,9 @@ export function ExploreWorkspace() {
             selectedRegionId={selectedRegionId}
             hoveredRegionId={hoveredRegionId}
             regionStyles={regionStyles}
-            labelsVisible={labelsVisible}
-            silhouette={silhouette}
+            labelsVisible={quizActive ? false : labelsVisible}
+            silhouette={quizActive ? false : silhouette}
+            showTooltip={!quizActive}
             interactive={true}
             viewRequestView={cameraView === 'free' ? 'front' : cameraView}
             viewRequestId={cameraRequestId}
@@ -225,9 +260,6 @@ export function ExploreWorkspace() {
         aria-label="Region details"
         className="hidden w-[440px] shrink-0 flex-col border-l border-white/8 bg-surface/70 lg:flex"
       >
-        <div className="px-4 pt-3">
-          <DisclaimerBanner />
-        </div>
         <div className="min-h-0 flex-1">
           <ContextPanel onSelect={handleSelect} />
         </div>
@@ -236,9 +268,6 @@ export function ExploreWorkspace() {
       {/* Mobile: bottom sheet panel */}
       <div className="lg:hidden">
         <MobileSheet header={sheetHeader} expandSignal={selectedRegionId}>
-          <div className="px-4 pt-3">
-            <DisclaimerBanner />
-          </div>
           <ContextPanel onSelect={handleSelect} />
         </MobileSheet>
       </div>

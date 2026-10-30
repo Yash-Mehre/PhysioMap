@@ -21,6 +21,7 @@ import {
 } from '@/config/labels'
 import { SITE } from '@/config/site'
 import { buildNutritionSummary, getWaterGoalMl, isProfileComplete } from '@/lib/health/profileValidation'
+import { formatMedicalHistory } from '@/lib/health/medicalHistory'
 import { hydrationWeekSeries } from '@/lib/health/hydration'
 import { formatHeight, formatMl, formatWeight } from '@/lib/health/units'
 import { useProfileStore } from '@/store/useProfileStore'
@@ -144,6 +145,11 @@ function ProfileSection({ profile }: { profile: UserProfile }) {
         profile.excludedTags.length > 0
           ? profile.excludedTags.map((tag) => DIET_TAG_LABELS[tag]).join(', ')
           : 'None',
+      wide: true,
+    },
+    {
+      label: 'Medical history',
+      value: formatMedicalHistory(profile.medicalConditions, profile.otherConditions),
       wide: true,
     },
   ]

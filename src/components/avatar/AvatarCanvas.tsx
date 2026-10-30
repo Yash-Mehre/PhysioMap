@@ -38,6 +38,7 @@ export interface AvatarCanvasPropsWithView extends AvatarCanvasProps {
   viewRequestId: number
   /** Fallback hook for the WebGL-less path. */
   onOpenRegions: () => void
+  showTooltip?: boolean
 }
 
 export default function AvatarCanvas({
@@ -53,6 +54,7 @@ export default function AvatarCanvas({
   viewRequestView,
   viewRequestId,
   onOpenRegions,
+  showTooltip = true,
 }: AvatarCanvasPropsWithView) {
   const webglSupported = useMemo(() => detectWebGLSupport(), [])
   const reducedMotion = usePrefersReducedMotion()
@@ -78,7 +80,7 @@ export default function AvatarCanvas({
     return <WebGLFallback onOpenRegions={onOpenRegions} />
   }
 
-  const showTooltip = interactive && hoveredRegionId !== null && pointer !== null
+  const shouldShowTooltip = showTooltip && interactive && hoveredRegionId !== null && pointer !== null
 
   return (
     <div
@@ -159,7 +161,7 @@ export default function AvatarCanvas({
           />
         </Canvas>
       </CanvasErrorBoundary>
-      {showTooltip && hoveredRegionId !== null && pointer !== null ? (
+      {shouldShowTooltip && hoveredRegionId !== null && pointer !== null ? (
         <RegionTooltip regionId={hoveredRegionId} x={pointer.x} y={pointer.y} />
       ) : null}
     </div>

@@ -5,8 +5,14 @@
  * Open state derives from a `useSyncExternalStore` store, so the server and
  * the first client render agree (dialog closed) and no hydration mismatch is
  * possible; the dialog opens only after mount if not yet acknowledged.
+ *
+ * The open is additionally delayed one tick past hydration: modal Radix
+ * dialogs mark all body children `aria-hidden` the moment they open, and
+ * opening during Next.js streaming hydration of the page segment would log
+ * a hydration warning. The short delay lets hydration settle first.
  */
 
+import { useEffect, useState } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -24,11 +30,21 @@ import { ShieldAlert } from 'lucide-react'
 
 const disclaimerAckStore = createLocalStorageStore<boolean>(STORAGE_KEYS.disclaimerAck, false)
 
+/** Delay (ms) after hydration before the modal opens, so streaming
+ * hydration of the page segment settles before the dialog mutates the DOM. */
+const OPEN_DELAY_MS = 300
+
 export function DisclaimerGate() {
   const hydrated = useHydrated()
   const [acknowledged, setAcknowledged] = useLocalStorageStoreValue(disclaimerAckStore)
+  const [settled, setSettled] = useState(false)
 
-  const open = hydrated && !acknowledged
+  useEffect(() => {
+    const timer = window.setTimeout(() => setSettled(true), OPEN_DELAY_MS)
+    return () => window.clearTimeout(timer)
+  }, [])
+
+  const open = hydrated && settled && !acknowledged
 
   return (
     <Dialog open={open} onOpenChange={(next) => !next && setAcknowledged(true)}>

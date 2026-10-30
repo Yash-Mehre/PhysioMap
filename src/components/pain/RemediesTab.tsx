@@ -4,6 +4,7 @@
 
 import { Ban, Clock, Thermometer } from 'lucide-react'
 import type { RegionContent } from '@/types'
+import { SaveActionButton } from '@/components/pain/SaveActionButton'
 
 export interface RemediesTabProps {
   content: RegionContent
@@ -36,6 +37,14 @@ export function RemediesTab({ content }: RemediesTabProps) {
                   {remedy.stopWhen}
                 </span>
               </p>
+            </div>
+            <div className="mt-3">
+              <SaveActionButton
+                action="remedy"
+                regionId={content.region.id}
+                title={remedy.title}
+                details={remedy.detail}
+              />
             </div>
           </li>
         ))}

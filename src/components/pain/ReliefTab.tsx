@@ -9,6 +9,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { RELIEF_KIND_LABELS } from '@/config/labels'
 import { ReliefPlayer } from '@/components/pain/ReliefPlayer'
 import type { RegionContent, ReliefExercise } from '@/types'
+import { SaveActionButton } from '@/components/pain/SaveActionButton'
 
 export interface ReliefTabProps {
   content: RegionContent;
@@ -30,7 +31,7 @@ export function ReliefTab({ content }: ReliefTabProps) {
       <ul className="space-y-2.5">
         {content.pain.relief.map((exercise) => (
           <li key={exercise.id}>
-            <ReliefCard exercise={exercise} />
+            <ReliefCard exercise={exercise} regionId={content.region.id} />
           </li>
         ))}
       </ul>
@@ -38,7 +39,7 @@ export function ReliefTab({ content }: ReliefTabProps) {
   );
 }
 
-function ReliefCard({ exercise }: { exercise: ReliefExercise }) {
+function ReliefCard({ exercise, regionId }: { exercise: ReliefExercise; regionId: RegionContent['region']['id'] }) {
   const tone = KIND_TONE[exercise.kind];
   return (
     <Collapsible className="group rounded-xl border border-white/8 bg-surface-raised/60">
@@ -96,6 +97,12 @@ function ReliefCard({ exercise }: { exercise: ReliefExercise }) {
               {exercise.cautions.join(' ')}
             </p>
           ) : null}
+          <SaveActionButton
+            action="relief"
+            regionId={regionId}
+            title={exercise.name}
+            details={exercise.steps.join(' ')}
+          />
         </div>
       </CollapsibleContent>
     </Collapsible>

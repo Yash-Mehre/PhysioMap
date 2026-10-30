@@ -1,4 +1,5 @@
-/** User profile & preferences store — persisted. Message 2 builds on this. */
+/** User profile & preferences store — persisted, with a migration so saved
+ * profiles from before the medical-history update keep working. */
 
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
@@ -13,6 +14,20 @@ interface ProfileState {
   resetProfile: () => void
 }
 
+/** v1 → v2: fill the medical-history fields added in this version. */
+function migrateProfile(persisted: unknown): Pick<ProfileState, 'profile'> {
+  const state = (persisted ?? {}) as { profile?: Partial<UserProfile> }
+  const profile = state.profile ?? {}
+  return {
+    profile: {
+      ...DEFAULT_PROFILE,
+      ...profile,
+      medicalConditions: profile.medicalConditions ?? [],
+      otherConditions: profile.otherConditions ?? [],
+    },
+  }
+}
+
 export const useProfileStore = create<ProfileState>()(
   persist(
     (set) => ({
@@ -20,6 +35,11 @@ export const useProfileStore = create<ProfileState>()(
       setProfile: (patch) => set((state) => ({ profile: { ...state.profile, ...patch } })),
       resetProfile: () => set({ profile: DEFAULT_PROFILE }),
     }),
-    { name: STORAGE_KEYS.profile, version: 1, storage: zustandJSONStorage },
+    {
+      name: STORAGE_KEYS.profile,
+      version: 2,
+      storage: zustandJSONStorage,
+      migrate: (persisted) => migrateProfile(persisted) as ProfileState,
+    },
   ),
 )

@@ -28,22 +28,38 @@ Built by **Team Psycho-Coderz** for the **Zinnovatio Hackathon**.
   "My Workout" plan with duration estimate and muscle preview.
 - **Pain mode (coral)** — zod-validated symptom assessment via `POST /api/pain/assess`
   (pure rule engine: emergency red flags ⇒ *urgent*; severity ≥ 8 / neuro symptoms ⇒ *see-clinician*;
-  chronic or 6–7 ⇒ *monitor*), guided relief player with countdown ring, desk-worker ergonomics
+  chronic or 6–7 ⇒ *monitor*) with **region-specific guidance** composed per answer (see the
+  guidance engine below), guided relief player with countdown ring, desk-worker ergonomics
   checklist with posture score, evidence-aligned remedies (no medications, ever) and a persisted
   pain log whose severity drives an amber → red heat glow on the avatar.
+  When a **medical history** is saved in the profile, the assessment also shows up to three
+  informational "Because of your medical history" notes (processed client-side only).
 - **Info mode (peach)** — anatomy education (origin → insertion, innervation, fun facts),
   injury prevention, and a 10-question seeded quiz ("Find it" — tap the region on the body;
   "Name it" — a region glows, pick from 4 options) with score, streak and persisted best score.
 - **Explorer UX** — shareable URLs (`/explore?mode=pain&region=knees`), keyboard shortcuts
   (`1/2/3` switch modes keeping the region, `Esc` deselects), mobile bottom sheet with
-  peek/half/full snaps, first-visit disclaimer gate, dark medical-tech design system.
+  peek/half/full snaps, a first-visit disclaimer popup (mounted once in the root layout, shown
+  on the first page opened, never again after "I understand — continue"), full-width sticky
+  header (logo hard-left, nav + profile icon hard-right), dark medical-tech design system.
+- **Local profile gate and suggestions** — Home and Explore require a completed local profile
+  before opening the body workspace. Build suggestion mode narrows exercises using profile
+  filters and safety cautions, while Pain mode explains that guidance is profile-aware and
+  educational. No account or cross-device authentication is created.
 
 ### Health & Nutrition Suite (`/health`)
 
-- **Profile tab** — one shared `ProfileForm` (also used by the Explorer's preferences dialog):
-  age, sex, height/weight with a metric ⇄ imperial toggle (always stored metric), activity level
-  with one-line descriptions, goal + weekly pace, diet preference (vegan / eggetarian / non-veg /
-  veg) and six exclusion tags (dairy, gluten, nuts, egg, soy, fish). Inline zod validation.
+- **Profile sheet (header user icon)** — the ONE profile UI of the app: a right-side sheet
+  (full width on mobile, ~440 px on desktop) with a read-only view ("Your numbers" strip with
+  BMI + daily calories, clean label/value rows per section) and an edit mode (all fields below +
+  name + medical history). Save keeps you in the sheet; Cancel discards edits. Every
+  "Complete your profile" empty state opens it in edit mode instead of navigating.
+- **Medical history (in the profile)** — 100+ user-selectable conditions in 11 collapsible
+  groups with search, selected-chip rows, an exclusive "None of the above" and a validated
+  free-text "Other" list (≤ 10 entries × 40 chars). **Privacy: it is saved only to
+  `localStorage` on this device and is never uploaded or sent to any API** — condition notes
+  are computed client-side. The profile store is versioned with a migration, so profiles saved
+  before this feature keep working.
 - **Calculators tab** — BMI with WHO ⇄ Asia-Pacific cut-offs, an SVG gauge and healthy weight
   range ("screening tool, not a diagnosis"); BMR (Mifflin-St Jeor); a TDEE table across all five
   activity levels with the chosen one highlighted; daily calorie target with a 25 %-capped
@@ -64,18 +80,18 @@ Built by **Team Psycho-Coderz** for the **Zinnovatio Hackathon**.
   7-day bar chart with goal line, streak counter and a reduced-motion-aware celebration when
   the goal is crossed.
 - **Summary tab ("Take it with you")** — live preview with per-section checkboxes, a branded
-  **PDF export** (`jspdf` + `jspdf-autotable`, dynamically imported on click) covering profile,
+  **PDF export** (`jspdf` + `jspdf-autotable`, dynamically imported on click) covering profile
+  (including a "Medical history" line),
   BMI, energy & macros, water, today's meal plan, My Workout and the self-reported pain log
   (missing sections render "Not provided"), with page footers — plus a print stylesheet for the
   preview. Cross-links both ways with the Explorer's "My Workout".
 
 ### Landing page (`/`)
 
-Full pitch-deck mirror: hero with the live interactive avatar ("Tap a muscle"), Problem /
-Solution stepper / three mode cards / nutrition suite cards / Engine (React · Three.js/WebGL ·
-Health API integrations + SVG architecture diagram + honest data-sources dialog) / personas /
-future direction (planned-only badges) / team / closing CTA. One WebGL canvas on the page;
-everything else is SVG/CSS. Reveal-on-scroll respects `prefers-reduced-motion`.
+The hero is followed directly by the interactive Explore workspace, which is the primary Home
+experience. The legacy pitch-deck sections are no longer rendered on Home. During an anatomy
+quiz, labels, silhouettes, hover tooltips and nonessential map overlays are hidden; the Body
+regions control remains available when the desktop region list is collapsed.
 
 ## Screenshots
 
@@ -92,8 +108,9 @@ bun run type-check   # tsc --noEmit
 bun run test         # vitest unit suite (lib/health, meal planner, pain engine, quiz)
 ```
 
-No logins, no payments, no external API keys, no external assets — the whole experience is
-procedural (3D + SVG + CSS) and works fully offline from curated local datasets.
+No logins, no payments, no external assets, and no health data leaves the device. Profile,
+pain, workout, meal, and hydration data remain in versioned localStorage. The optional
+Supabase PostgreSQL database stores only server-side operational logs through `/api/logs`.
 
 ### Optional env flags (all default OFF — see `.env.example`)
 
@@ -102,6 +119,8 @@ procedural (3D + SVG + CSS) and works fully offline from curated local datasets.
 | `ENABLE_WGER=true` | Attach exercise thumbnails in Build mode from the public wger API (name match, 4 s timeout, in-memory cache, silent fallback to no image). |
 | `ENABLE_OPEN_FOOD_FACTS=true` | Power the Meal Planner's "Search a food" dialog with live per-100 g data from Open Food Facts. |
 | `NEXT_PUBLIC_AVATAR_MODEL_URL` | Load a custom GLTF avatar instead of the procedural one. |
+| `DATABASE_URL` | Supabase pooled PostgreSQL connection used by the server logger. |
+| `DIRECT_URL` | Supabase direct PostgreSQL connection used by Prisma migrations. |
 
 `GET /api/health-data/status` reports which providers are active (local is always true), and the
 **DataSourcesDialog** (footer + landing Engine section) shows it honestly.
@@ -124,15 +143,48 @@ UI components ──► hooks ──► services (typed fetch) ──► API rou
   exercise highlights + workout preview + pain-log heat + quiz state, so the 3D layer never knows
   about app modes.
 - **Pure logic lives in `src/lib/`** — the pain rule engine (`lib/pain/assess.ts`,
-  `redFlags.ts`, `heat.ts`), set schemes and workout estimates (`lib/build/*`), the seeded quiz
-  engine (`lib/quiz/quizEngine.ts`), the health calculators (`lib/health/` — bmi, energy, macros,
-  water, hydration, units, profile validation), the meal planner (`lib/nutrition/` —
+  `redFlags.ts`, `guidance.ts`, `heat.ts`, `conditionNotes.ts`), set schemes and workout
+  estimates (`lib/build/*`), the seeded quiz engine (`lib/quiz/quizEngine.ts`), the health
+  calculators (`lib/health/` — bmi, energy, macros, water, hydration, units, profile
+  validation, medical-history formatting), the meal planner (`lib/nutrition/` —
   `mealPlanner.ts`, `dietRules.ts`, `seededRandom.ts`) and the PDF builder (`lib/pdf/`) — all
   unit-tested, side-effect free.
 - **Constants live in `src/config/`** — regions, camera presets, colors, storage keys, form
   catalogs, nutrition constants (`nutrition.ts`), zod schemas (`healthSchemas.ts`,
-  `painSchemas.ts`), landing copy (`landingContent.ts`), team (`team.ts`); unions are derived
-  from `as const` arrays (`REGION_IDS → RegionId`).
+  `painSchemas.ts`), landing copy (`landingContent.ts`), team (`team.ts`), the medical-conditions
+  catalog (`medicalConditions.ts`) and the guidance data files (`config/guidance/`); unions are
+  derived from `as const` arrays (`REGION_IDS → RegionId`,
+  `MEDICAL_CONDITION_IDS → MedicalConditionId`).
+- **Server persistence is deliberately limited** — `src/lib/serverLogger.ts` writes bounded,
+  non-sensitive operational events to the `AppLog` Prisma model. Health data is never accepted
+  by that endpoint.
+
+### Supabase setup
+
+1. Copy `.env.example` to `.env.local`.
+2. Set `DATABASE_URL` to the Supabase pooled connection string and `DIRECT_URL` to the direct
+   connection string. Never commit either value.
+3. Run `bun run db:deploy` in deployment environments, or `bun run db:push` for local setup.
+4. Configure the same environment variables in the hosting provider.
+
+#### The pain guidance engine
+
+`resolveUrgency` (unchanged rule ladder) decides *how urgent*; `buildGuidance`
+(`lib/pain/guidance.ts`) decides *what to say*, composing region- and input-specific guidance
+from typed data files in `config/guidance/`:
+
+| File | Contents |
+| --- | --- |
+| `regionProfiles.ts` | Per-region `areaName`, `specialist`, `safeMovement`, `avoidMovement`, `commonLoadingFactors`, `urgentSigns` — all 19 regions. |
+| `redFlagGuidance.ts` | One do-now/avoid/watch-for trio per red flag, with region-specific variants (e.g. bladder-bowel × lower-back, calf swelling × calves). |
+| `sensationGuidance.ts` / `aggravatorGuidance.ts` | A tip per sensation/aggravator plus region overrides for the common combinations (sitting × lower-back, typing × neck, stairs × knees, …). |
+| `onsetGuidance.ts` / `durationGuidance.ts` / `severityGuidance.ts` | Onset watch-fors, duration follow-ups and severity bands (1–3 / 4–5 / 6–7 / 8–10) with re-check rules. |
+
+Composition order: urgency headline (region + specialist) → one line per red flag (most
+serious first) → top-2 region aggravator tips → sensation + onset tips → a follow-up quoting
+the user's own numbers → the region's avoid/safe-movement lines. Lists are capped (1–3 items,
+5–9 lines total), de-duplicated, and never diagnostic ("can be linked to / worth getting
+checked", no medicine names). `lib/pain/__tests__/guidance.test.ts` locks all of this down.
 
 ## Folder map
 
@@ -146,31 +198,40 @@ src/
                       GET food-search (optional Open Food Facts)
     api/health-data/  GET status (active providers), GET exercise-image (optional wger)
   components/
-    layout/           SiteHeader (mobile Sheet menu), SiteFooter (+ DataSourcesDialog),
-                      DisclaimerBanner/Gate, ModeSwitcher, ProfileDialog, Providers
-    landing/          LandingHeader, LandingHero, 9 section components, Reveal, MiniMacroDonut
+    layout/           SiteHeader (full-width, mobile Sheet menu, profile trigger), SiteFooter
+                      (+ DataSourcesDialog), DisclaimerGate (root-level first-visit popup),
+                      ModeSwitcher, Providers (Query + Toaster + DisclaimerGate + ProfileSheet)
+    profile/          ProfileSheet, ProfileView (read-only), ProfileForm (edit),
+                      MedicalHistoryField — the ONE profile UI
+    landing/          LandingHeader (full-width, centered xl anchors), LandingHero, 9 section
+                      components, Reveal, MiniMacroDonut
     avatar/           AvatarCanvas, ProceduralAvatar, GltfAvatar (optional GLTF path),
                       MuscleMesh, CameraRig, RegionTooltip/Labels, ViewControls, WebGLFallback,
                       geometry.ts, useAvatarMaterials.ts, CanvasErrorBoundary
     explore/          ExploreWorkspace, RegionList, ContextPanel, PanelEmptyState, MobileSheet
     build/ pain/ info/ mode panels (one responsibility per file)
-    health/           HealthSuiteClient (URL-synced tabs + key numbers), ProfileTab/Form,
-                      CalculatorsTab, BmiGauge, HowCalculatedPopover, ProfileRequiredState,
-                      meal/ (MealPlannerTab, MealCard, FoodItemRow, PlanCharts, WeekPlanView,
-                      FoodSearchDialog), hydration/ (HydrationTab, Ring, History),
-                      summary/ (SummaryTab, SummaryPreview)
+    health/           HealthSuiteClient (URL-synced tabs + key numbers), CalculatorsTab, BmiGauge,
+                      HowCalculatedPopover, ProfileRequiredState, meal/ (MealPlannerTab,
+                      MealCard, FoodItemRow, PlanCharts, WeekPlanView, FoodSearchDialog),
+                      hydration/ (HydrationTab, Ring, History), summary/ (SummaryTab,
+                      SummaryPreview)
     shared/           DataSourcesDialog
   config/             site, theme, regions, camera, labels, assessment, painSchemas,
                       ergonomics, storageKeys, profileOptions, nutrition, healthSchemas,
-                      healthTabs, landingContent, team, avatar/*
+                      healthTabs, landingContent, team, medicalConditions, conditionNotes,
+                      guidance/ (regionProfiles, redFlagGuidance, sensationGuidance,
+                      aggravatorGuidance, onsetGuidance, durationGuidance, severityGuidance),
+                      avatar/*
   data/regions/       headNeck, upperBody, core, lowerBody — one RegionContent per region (19 total)
   data/foods.ts       curated India-friendly food database (40 items, per stated serving)
   hooks/              useRegionContent, useUrlSync, useRegionVisualState, useKeyboardShortcuts,
                       useHydrated, usePrefersReducedMotion, useExerciseImage, use-mobile
-  lib/                build/ pain/ quiz/ health/ nutrition/ (pure logic), pdf/, providers/, storage/
+  lib/                build/ pain/ (assess, guidance, redFlags, conditionNotes, heat + tests),
+                      quiz/ health/ (incl. medicalHistory) nutrition/ (pure logic), pdf/,
+                      providers/, storage/
   services/           regionService, painService, nutritionService (the only fetchers)
-  store/              useExplorerStore (UI state) + persisted workout / pain log / profile /
-                      quiz-best / hydration / meal-plan
+  store/              useExplorerStore (UI state) + persisted workout / pain log / profile
+                      (v2, migrated) / quiz-best / hydration / meal-plan + useProfilePanel
   types/              region, anatomy, exercise, pain, profile, quiz, avatar, nutrition
 ```
 
@@ -178,13 +239,27 @@ src/
 
 1. **Region:** add the id to `REGION_IDS` in `config/regions.ts` and a `REGIONS` entry;
    add a camera preset in `config/camera.ts`; add meshes in `config/avatar/muscleDefinitions.ts`;
-   append a fully populated `RegionContent` to the right group file in `data/regions/`.
-2. **Exercise:** just add it to the region's `build.exercises` — ids are
+   append a fully populated `RegionContent` to the right group file in `data/regions/`; and add a
+   `RegionGuidanceProfile` entry to `config/guidance/regionProfiles.ts` so the pain guidance
+   composer can talk about it (a unit test iterates `REGION_IDS` and fails on a missing
+   profile).
+2. **Region guidance entry:** fill every field of `RegionGuidanceProfile` (`areaName`,
+   `specialist`, `safeMovement`, `avoidMovement`, `commonLoadingFactors`, `urgentSigns`) in
+   natural language — keep the "can be linked to / worth getting checked" tone and never name
+   medicines. Optionally add region overrides for specific red flags
+   (`redFlagGuidance.ts → regionVariants`) or aggravator/sensation combinations
+   (`aggravatorGuidance.ts` / `sensationGuidance.ts → regionVariants`).
+3. **Medical condition:** add the id to `MEDICAL_CONDITION_IDS` and the labelled entry to
+   `MEDICAL_CONDITIONS` (same group) in `config/medicalConditions.ts` — the picker, the
+   profile view, the PDF line and the type union pick it up automatically. If it should
+   influence pain-assessment notes, add a rule to `CONDITION_NOTE_RULES` in
+   `config/conditionNotes.ts` (informational only — never urgency).
+4. **Exercise:** just add it to the region's `build.exercises` — ids are
    `${regionId}-${kebab-name}` and must be globally unique.
-3. **Food:** append one `Food` entry to `data/foods.ts` (id, name, servingLabel, kcal/protein/
+5. **Food:** append one `Food` entry to `data/foods.ts` (id, name, servingLabel, kcal/protein/
    carbs/fat per serving, slots `B|LD|S`, role `complete|staple|protein|side|snack`, diet tier,
    allergen tags). The planner picks it up automatically.
-4. No UI changes needed — every panel is fully data-driven.
+6. No UI changes needed — every panel is fully data-driven.
 
 **Optional GLTF avatar:** set `NEXT_PUBLIC_AVATAR_MODEL_URL` to a glTF URL and extend
 `config/avatar/meshMap.ts` (mesh name → region). The procedural avatar stays the default.

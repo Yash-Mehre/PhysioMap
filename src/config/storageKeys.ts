@@ -15,4 +15,5 @@ export const STORAGE_KEYS = {
   quizBest: `${PREFIX}:quiz-best`,
   hydration: `${PREFIX}:hydration`,
   mealPlan: `${PREFIX}:meal-plan`,
+  healthLog: `${PREFIX}:health-log`,
 } as const

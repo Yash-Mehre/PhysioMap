@@ -1,16 +1,38 @@
 'use client'
 
-/** Assessment result: urgency banner, red flags, associations, next steps + save. */
+/**
+ * Assessment result: urgency banner with the region-specific headline, the
+ * reported warning signs, common associations, the four guidance blocks
+ * (Do now · Avoid · Watch for · Next check-in), "Based on" chips, the
+ * medical-history notes (processed client-side only) and save-to-log.
+ */
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
-import { ArrowLeft, BookmarkPlus, CheckCircle2, ListChecks } from 'lucide-react'
+import {
+  ArrowLeft,
+  Ban,
+  BookmarkPlus,
+  CalendarClock,
+  CheckCircle2,
+  Eye,
+  History,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { RedFlagBanner } from '@/components/pain/RedFlagBanner'
 import { AGGRAVATOR_LABELS, RED_FLAG_LABELS, SENSATION_LABELS } from '@/config/assessment'
+import { getConditionNotes } from '@/lib/pain/conditionNotes'
 import { usePainLogStore } from '@/store/usePainLogStore'
+import { useProfileStore } from '@/store/useProfileStore'
 import type { PainAssessmentResult, RegionId } from '@/types'
 import type { SymptomFormValues } from '@/components/pain/SymptomForm'
+
+const GUIDANCE_BLOCKS = [
+  { key: 'doNow', label: 'Do now', icon: CheckCircle2, tint: 'text-mode-build' },
+  { key: 'avoid', label: 'Avoid', icon: Ban, tint: 'text-mode-pain' },
+  { key: 'watchFor', label: 'Watch for', icon: Eye, tint: 'text-mode-info' },
+  { key: 'followUp', label: 'Next check-in', icon: CalendarClock, tint: 'text-copper' },
+] as const
 
 export interface AssessmentResultProps {
   result: PainAssessmentResult
@@ -18,11 +40,25 @@ export interface AssessmentResultProps {
   regionId: RegionId
   regionLabel: string
   onRestart: () => void
+  initialSaved?: boolean
 }
 
-export function AssessmentResult({ result, input, regionId, regionLabel, onRestart }: AssessmentResultProps) {
+export function AssessmentResult({
+  result,
+  input,
+  regionId,
+  regionLabel,
+  onRestart,
+  initialSaved = false,
+}: AssessmentResultProps) {
   const addEntry = usePainLogStore((state) => state.addEntry)
-  const [saved, setSaved] = useState(false)
+  const medicalConditions = useProfileStore((state) => state.profile.medicalConditions)
+  const [saved, setSaved] = useState(initialSaved)
+
+  const conditionNotes = useMemo(
+    () => getConditionNotes(medicalConditions, regionId, { ...input, regionId }),
+    [medicalConditions, regionId, input],
+  )
 
   const handleSave = (): void => {
     addEntry({
@@ -30,6 +66,11 @@ export function AssessmentResult({ result, input, regionId, regionLabel, onResta
       severity: input.severity,
       sensations: input.sensations,
       urgency: result.urgency,
+      onset: input.onset,
+      duration: input.duration,
+      aggravators: input.aggravators,
+      redFlags: input.redFlags,
+      result,
     })
     setSaved(true)
     toast.success('Pain entry saved to your log')
@@ -37,7 +78,7 @@ export function AssessmentResult({ result, input, regionId, regionLabel, onResta
 
   return (
     <div className="space-y-5">
-      <RedFlagBanner urgency={result.urgency} />
+      <RedFlagBanner urgency={result.urgency} headline={result.guidance.headline} />
 
       {result.redFlags.length > 0 ? (
         <section aria-label="Reported warning signs" className="space-y-2">
@@ -65,7 +106,7 @@ export function AssessmentResult({ result, input, regionId, regionLabel, onResta
         {result.associations.length === 0 ? (
           <p className="rounded-xl border border-white/8 bg-surface-raised/50 p-4 text-xs leading-relaxed text-muted-foreground">
             Your symptom combination did not match a specific pattern from this region’s library — that does not
-            mean anything is wrong. Follow the general next steps below and the Relief tab, and track how you
+            mean anything is wrong. Follow the guidance below and the Relief tab, and track how you
             feel over the next few days.
           </p>
         ) : (
@@ -98,19 +139,51 @@ export function AssessmentResult({ result, input, regionId, regionLabel, onResta
         )}
       </section>
 
-      <section aria-label="Suggested next steps" className="space-y-2">
-        <h2 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-copper">
-          <ListChecks className="h-3.5 w-3.5" aria-hidden="true" /> Suggested next steps
-        </h2>
-        <ul className="space-y-1.5">
-          {result.nextSteps.map((step, index) => (
-            <li key={index} className="flex gap-2 text-xs leading-relaxed text-muted-foreground">
-              <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-mode-build" aria-hidden="true" />
-              {step}
+      <section aria-label="Your guidance" className="grid gap-2.5 sm:grid-cols-2">
+        {GUIDANCE_BLOCKS.map(({ key, label, icon: Icon, tint }) => (
+          <div key={key} className="rounded-xl border border-white/8 bg-surface-raised/60 p-3.5">
+            <h3 className={`flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.16em] ${tint}`}>
+              <Icon className="h-3.5 w-3.5" aria-hidden="true" /> {label}
+            </h3>
+            <ul className="mt-2 space-y-1.5">
+              {result.guidance[key].map((line, index) => (
+                <li key={index} className="text-xs leading-relaxed text-foreground/90">
+                  {line}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </section>
+
+      <section aria-label="Based on your answers" className="space-y-2">
+        <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Based on</h2>
+        <ul className="flex flex-wrap gap-1.5">
+          {result.guidance.basedOn.map((chip, index) => (
+            <li
+              key={`${index}-${chip}`}
+              className="rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground"
+            >
+              {chip}
             </li>
           ))}
         </ul>
       </section>
+
+      {conditionNotes.length > 0 ? (
+        <section aria-label="Because of your medical history" className="space-y-2">
+          <h2 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-mode-info">
+            <History className="h-3.5 w-3.5" aria-hidden="true" /> Because of your medical history
+          </h2>
+          <ul className="space-y-1.5 rounded-xl border border-mode-info/25 bg-mode-info/8 p-3.5">
+            {conditionNotes.map((note, index) => (
+              <li key={index} className="text-xs leading-relaxed text-foreground/90">
+                {note}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       <div className="flex flex-wrap gap-2">
         <Button

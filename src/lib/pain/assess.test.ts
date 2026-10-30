@@ -49,7 +49,7 @@ describe('red flag classification', () => {
 describe('assessPain urgency ladder', () => {
   it('any emergency flag forces urgent', () => {
     for (const flag of ['chest-pressure', 'bladder-bowel', 'cannot-bear-weight'] as const) {
-      expect(assessPain(input({ redFlags: [flag] }), ASSOCIATIONS, 'Lower Back').urgency).toBe('urgent')
+      expect(assessPain(input({ redFlags: [flag] }), ASSOCIATIONS).urgency).toBe('urgent')
     }
   })
 
@@ -57,18 +57,17 @@ describe('assessPain urgency ladder', () => {
     const result = assessPain(
       input({ regionId: 'calves', redFlags: ['swelling-redness-warmth'] }),
       ASSOCIATIONS,
-      'Calves',
     )
     expect(result.urgency).toBe('urgent')
   })
 
   it('severity ≥ 8 escalates to see-clinician', () => {
-    expect(assessPain(input({ severity: 8 }), ASSOCIATIONS, 'Lower Back').urgency).toBe('see-clinician')
+    expect(assessPain(input({ severity: 8 }), ASSOCIATIONS).urgency).toBe('see-clinician')
   })
 
   it('numbness-weakness, fever and night-pain-rest escalate to see-clinician', () => {
     for (const flag of ['numbness-weakness', 'fever', 'night-pain-rest'] as const) {
-      expect(assessPain(input({ redFlags: [flag] }), ASSOCIATIONS, 'Lower Back').urgency).toBe('see-clinician')
+      expect(assessPain(input({ redFlags: [flag] }), ASSOCIATIONS).urgency).toBe('see-clinician')
     }
   })
 
@@ -76,25 +75,25 @@ describe('assessPain urgency ladder', () => {
     const result = assessPain(
       input({ redFlags: ['recent-injury', 'swelling-redness-warmth'] }),
       ASSOCIATIONS,
-      'Lower Back',
     )
     expect(result.urgency).toBe('see-clinician')
   })
 
   it('chronic duration or severity 6–7 lands on monitor', () => {
-    expect(assessPain(input({ duration: '1-3-months' }), ASSOCIATIONS, 'Lower Back').urgency).toBe('monitor')
-    expect(assessPain(input({ duration: 'over-3-months' }), ASSOCIATIONS, 'Lower Back').urgency).toBe('monitor')
-    expect(assessPain(input({ severity: 7 }), ASSOCIATIONS, 'Lower Back').urgency).toBe('monitor')
+    expect(assessPain(input({ duration: '1-3-months' }), ASSOCIATIONS).urgency).toBe('monitor')
+    expect(assessPain(input({ duration: 'over-3-months' }), ASSOCIATIONS).urgency).toBe('monitor')
+    expect(assessPain(input({ severity: 7 }), ASSOCIATIONS).urgency).toBe('monitor')
   })
 
   it('a mild, fresh, flag-free case is self-care', () => {
-    const result = assessPain(input(), ASSOCIATIONS, 'Lower Back')
+    const result = assessPain(input(), ASSOCIATIONS)
     expect(result.urgency).toBe('self-care')
-    expect(result.nextSteps.length).toBeGreaterThan(0)
+    expect(result.guidance.doNow.length).toBeGreaterThan(0)
+    expect(result.guidance.headline).toContain('lower back')
   })
 
   it('echoes the reported red flags', () => {
-    const result = assessPain(input({ redFlags: ['fever'] }), ASSOCIATIONS, 'Lower Back')
+    const result = assessPain(input({ redFlags: ['fever'] }), ASSOCIATIONS)
     expect(result.redFlags).toEqual(['fever'])
   })
 })

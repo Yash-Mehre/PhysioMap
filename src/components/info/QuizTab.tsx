@@ -182,9 +182,7 @@ export function QuizTab() {
               animate={phase === 'wrong' ? { x: [0, -7, 7, -5, 5, 0] } : { x: 0 }}
               transition={{ duration: 0.4 }}
             >
-              {question.kind === 'find-it'
-                ? `Tap: ${REGION_BY_ID[question.answerRegionId].label}`
-                : 'Which region is highlighted?'}
+              {question.kind === 'find-it' ? 'Find the named region on the body map' : 'Which region is highlighted?'}
             </motion.p>
             {phase !== 'asking' ? (
               <p

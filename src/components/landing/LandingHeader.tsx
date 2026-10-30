@@ -64,11 +64,11 @@ export function LandingHeader() {
         scrolled ? 'border-b border-white/8 bg-background/85 backdrop-blur-md' : 'border-b border-transparent bg-transparent',
       )}
     >
-      <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-3 px-4 sm:px-6">
+      <div className="flex h-16 w-full max-w-none items-center justify-between gap-3 px-3 sm:px-4">
         <Link
           href="/"
           aria-label="PhysioMap home"
-          className="group flex items-center gap-2.5 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-copper"
+          className="group flex shrink-0 items-center gap-2.5 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-copper"
         >
           <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-copper/30 bg-surface-raised transition-colors duration-150 group-hover:border-copper/60">
             <Activity className="h-4.5 w-4.5 text-copper" aria-hidden="true" />
@@ -81,7 +81,11 @@ export function LandingHeader() {
           </span>
         </Link>
 
-        <nav aria-label="Landing page sections" className="hidden items-center gap-1 md:flex">
+        {/* Section anchors: centered between the two clusters on xl screens */}
+        <nav
+          aria-label="Landing page sections"
+          className="hidden flex-1 items-center justify-center gap-1 xl:flex"
+        >
           {HEADER_NAV.map((item) => (
             <a
               key={item.id}
@@ -94,7 +98,7 @@ export function LandingHeader() {
           ))}
         </nav>
 
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           <Button
             asChild
             className="hidden h-11 bg-brand-blue px-5 font-semibold text-white hover:bg-brand-blue/85 sm:inline-flex"
@@ -108,7 +112,7 @@ export function LandingHeader() {
                 variant="ghost"
                 size="icon"
                 aria-label="Open navigation menu"
-                className="h-11 w-11 rounded-full text-muted-foreground hover:text-foreground md:hidden"
+                className="h-11 w-11 rounded-full text-muted-foreground hover:text-foreground xl:hidden"
               >
                 <Menu className="h-5 w-5" />
               </Button>

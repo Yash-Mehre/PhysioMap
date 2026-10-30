@@ -13,6 +13,7 @@ import {
   useLocalStorageStoreValue,
 } from '@/lib/storage/localStorageStore'
 import type { RegionContent } from '@/types'
+import { SaveActionButton } from '@/components/pain/SaveActionButton'
 
 export interface ErgonomicsTabProps {
   content: RegionContent
@@ -55,6 +56,12 @@ export function ErgonomicsTab({ content }: ErgonomicsTabProps) {
       </section>
 
       <section aria-label="Desk worker checklist" className="space-y-3">
+        <SaveActionButton
+          action="desk"
+          regionId={content.region.id}
+          title="Desk worker checklist"
+          details={`Posture score ${score}/100`}
+        />
         <div className="flex items-center justify-between">
           <h2 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-copper">
             <MonitorCheck className="h-3.5 w-3.5" aria-hidden="true" /> Desk worker checklist

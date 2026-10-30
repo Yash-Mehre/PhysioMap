@@ -1,15 +1,7 @@
 import type { Metadata } from 'next'
 import { LandingHeader } from '@/components/landing/LandingHeader'
 import { LandingHero } from '@/components/landing/LandingHero'
-import { ProblemSection } from '@/components/landing/ProblemSection'
-import { SolutionSection } from '@/components/landing/SolutionSection'
-import { ModesSection } from '@/components/landing/ModesSection'
-import { SuiteSection } from '@/components/landing/SuiteSection'
-import { EngineSection } from '@/components/landing/EngineSection'
-import { PersonaSection } from '@/components/landing/PersonaSection'
-import { FutureSection } from '@/components/landing/FutureSection'
-import { TeamSection } from '@/components/landing/TeamSection'
-import { ClosingCta } from '@/components/landing/ClosingCta'
+import { ExploreWorkspace } from '@/components/explore/ExploreWorkspace'
 import { SiteFooter } from '@/components/layout/SiteFooter'
 import { SITE } from '@/config/site'
 
@@ -24,15 +16,7 @@ export default function Home() {
       <LandingHeader />
       <main className="flex-1">
         <LandingHero />
-        <ProblemSection />
-        <SolutionSection />
-        <ModesSection />
-        <SuiteSection />
-        <EngineSection />
-        <PersonaSection />
-        <FutureSection />
-        <TeamSection />
-        <ClosingCta />
+        <ExploreWorkspace embedded />
       </main>
       <SiteFooter />
     </div>
