@@ -1,0 +1,30 @@
+# TASK 5 — full-stack-developer — Summary tab ("Take it with you")
+
+## Status: COMPLETE (tsc clean, lint clean, dev server compiles)
+
+## Files written (ownership respected)
+1. `src/components/health/summary/SummaryTab.tsx` — REPLACED stub. Heading block (eyebrow "Take it with you" / h2 "Your health summary"), section checklist card (7 shadcn Checkbox + Label rows, each with description + has-data/no-data hint with colored dot), action row (Download PDF primary `bg-brand-blue` with Loader2 spinner while generating; Print outline via `window.print()`; note that printing shows only the preview), `<SummaryPreview sections={sections} />`, cross-link card "Bring it into training" with next/link + ArrowRight to `/explore`. Guards: `!hydrated` → pulse skeleton; `!isProfileComplete(profile)` → `<ProfileRequiredState />`. PDF lib is dynamically imported on click only (`await import('@/lib/pdf/healthSummary')`); toasts `PDF downloaded` / `Could not generate the PDF` via sonner.
+2. `src/components/health/summary/SummaryPreview.tsx` — CREATED. Light "paper" preview (`bg-white text-slate-900 rounded-xl p-6 shadow-xl max-w-3xl mx-auto`, `className="print-area"`). Exports `SectionKey` union (`'profile'|'bmi'|'energy'|'water'|'mealPlan'|'workout'|'painLog'`), `SummaryPreviewProps { sections: Record<SectionKey, boolean> }`, and two shared formatters `formatSummaryPace(profile)` / `formatSummaryEnergyDelta(delta, goal)`. Header: PhysioMap wordmark (font-heading, #0B0F17) + blue→copper accent bar + SITE.tagline + "Generated {d MMMM yyyy}" (date-fns). Sections in PDF order, each gated on `sections[key]`, small uppercase slate-500 heading: Profile snapshot (dl grid, 9 fields incl. exclusions), BMI (value + category + healthy range), Energy & macros (4 stat boxes, floor note, macro table via shadcn Table with slate overrides, fiber line), Water (goal/today + 7-bar div strip with dashed copper goal line, `role="img"` label), Today's meal plan (Meal/Items/kcal/Protein table + Daily total row on bg-slate-50; day 1 of plan), My workout (name, sets × reps · region, Done/Not done), Recent pain log (last 5, "Self-reported" note, region + severity/10 + date). Footer: "Educational guidance, not medical advice." Missing data → italic "Not provided", everything guarded.
+3. `src/lib/pdf/healthSummary.ts` — CREATED. Exports `generateHealthSummaryPdf(snapshot: HealthSummarySnapshot): Promise<void>` + full `HealthSummarySnapshot` type tree (pre-formatted strings only; `profile` is `| null` — see deviations). jspdf v4 (`(await import('jspdf')).default`) + jspdf-autotable v5 (`(await import('jspdf-autotable')).default`, which is the functional `autoTable(doc, options)` — package also has a named `autoTable` export; verified in `node_modules/jspdf-autotable/dist/index.d.ts`: `export declare function autoTable(d, options)` + `export { autoTable as default }`). A4 portrait mm; page-1 cover header (navy #0B0F17 band 28 mm, helvetica bold 22 wordmark, tagline, copper 1.5 mm bar, right-aligned date `d MMMM yyyy`); slim 12 mm repeat header on continuation pages (drawn by `ensureSpace` addPage and by autoTable `didDrawPage` when `data.pageNumber > 1`); blue uppercase section headings with rule; autoTable for macros / meal plan (foot totals row on light-blue fill) / workout / pain log; hand-drawn 7-bar water chart (`doc.rect` #2F63E0 bars, dashed copper goal line via `doc.setLineDashPattern`, tiny labels); footer on EVERY page via `doc.setPage` loop (credits left from SITE.team/SITE.event, italic disclaimer center — centered in the space between measured left/right text widths to guarantee no overlap, "Page X of Y" right). Margins 14 mm, content bottom 275 mm, table margin bottom 22 mm, y tracked via `doc.lastAutoTable.finalY` read through a typed accessor (no `any`). Filename `PhysioMap-Health-Summary-YYYY-MM-DD.pdf` (local date via `toDateKey`), `doc.save()`.
+4. `src/app/globals.css` — APPENDED print block at the very end (append-only, no existing lines touched): `@media print` white body, `body * { visibility: hidden }`, `.print-area` + descendants visible, `.print-area` absolute/centered/no shadow/no radius.
+
+## Snapshot assembly contract (in SummaryTab)
+- Unchecked section → `null` in snapshot → skipped by the PDF renderer.
+- Checked but store empty (no plan / 0 exercises / 0 pain entries) → `null` → skipped in PDF; the live preview shows "Not provided" for those (per preview spec).
+- Empty arrays inside a present block (e.g. plan day with 0 slots) → PDF renders "Not provided" (handled).
+- `macros` and `energy` both gated by the single `energy` checkbox (one "Energy & macros" section).
+- `water.week` is the raw `hydrationWeekSeries(log, summary.waterMl)` result (HydrationDayPoint[] is structurally assignable to the snapshot day type).
+
+## Deviations from spec (intentional, documented)
+- `HealthSummarySnapshot.profile` is `HealthSummaryProfileBlock | null` (spec showed non-null). Reason: the profile checkbox must be able to exclude the section from the PDF/preview; the renderer already guarded `if (snapshot.profile)`, so nullability is required for the checklist to work. The tab always populates it when the profile section is checked (and the tab only mounts when the profile is complete).
+- Everything else per spec (buttons, icons, toasts, colors, print CSS verbatim).
+
+## QA
+- `bunx tsc --noEmit` → 0 errors (after fixing one tuple-union typing slip in the profile grid rows).
+- `bun run lint` → 0 errors.
+- `dev.log`: clean `✓ Compiled` after all edits; no errors referencing summary/pdf files. (Transient `Module not found: CalculatorsTab` entries in the log are from Task 2's parallel file replacement, not my files.)
+
+## Notes for other agents
+- Do not import from `@/lib/pdf/healthSummary` at top level in any client component that shouldn't bundle jspdf — use dynamic import (it is only pulled on click).
+- `SectionKey` is exported from `@/components/health/summary/SummaryPreview`.
+- The global print stylesheet hides everything except `.print-area`; if another tab ever needs printing, coordinate (only one element should carry `.print-area` per page).
