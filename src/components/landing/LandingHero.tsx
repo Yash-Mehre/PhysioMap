@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button'
 import { createNeutralRegionStyles } from '@/types'
 import { REGION_IDS } from '@/config/regions'
 import { HERO_CONTENT } from '@/config/landingContent'
+import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion'
 import type { RegionId, RegionVisualState } from '@/types'
 
 const AvatarCanvas = dynamic(() => import('@/components/avatar/AvatarCanvas'), {
@@ -37,6 +38,7 @@ const HOVER_REGION_STATE: RegionVisualState = {
 
 export function LandingHero() {
   const router = useRouter()
+  const reducedMotion = usePrefersReducedMotion()
   const neutralStyles = useMemo(() => createNeutralRegionStyles(REGION_IDS), [])
   const [hoveredRegionId, setHoveredRegionId] = useState<RegionId | null>(null)
 
@@ -139,7 +141,7 @@ export function LandingHero() {
             labelsVisible={false}
             silhouette={false}
             interactive={true}
-            autoRotate={true}
+            autoRotate={!reducedMotion}
             viewRequestView="front"
             viewRequestId={0}
             onSelect={handleSelect}

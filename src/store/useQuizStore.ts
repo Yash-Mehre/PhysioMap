@@ -6,6 +6,7 @@
 
 import { create } from 'zustand'
 import { readStoredValue, writeStoredValue } from '@/lib/storage/storage'
+import { registerStoreReset } from '@/lib/storage/resetAll'
 import { STORAGE_KEYS } from '@/config/storageKeys'
 import { isCorrectAnswer } from '@/lib/quiz/quizEngine'
 import type { QuizPhase, QuizQuestion, QuizStatus, RegionId } from '@/types'
@@ -97,3 +98,9 @@ export function selectActiveQuestion(state: QuizState): QuizQuestion | null {
   if (state.status !== 'active') return null
   return state.questions[state.index] ?? null
 }
+
+/** Log out clears the persisted best score and any running quiz session. */
+registerStoreReset(() => {
+  useQuizStore.getState().reset()
+  useQuizStore.setState({ bestScore: 0 })
+})

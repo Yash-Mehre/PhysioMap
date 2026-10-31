@@ -17,7 +17,6 @@ import { GltfAvatar } from '@/components/avatar/GltfAvatar'
 import { RegionTooltip } from '@/components/avatar/RegionTooltip'
 import { WebGLFallback } from '@/components/avatar/WebGLFallback'
 import { CanvasErrorBoundary } from '@/components/avatar/CanvasErrorBoundary'
-import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion'
 import type { AvatarCanvasProps } from '@/types'
 
 const MODEL_URL = process.env.NEXT_PUBLIC_AVATAR_MODEL_URL ?? ''
@@ -55,7 +54,6 @@ export default function AvatarCanvas({
   onOpenRegions,
 }: AvatarCanvasPropsWithView) {
   const webglSupported = useMemo(() => detectWebGLSupport(), [])
-  const reducedMotion = usePrefersReducedMotion()
   const containerRef = useRef<HTMLDivElement>(null)
   const [pointer, setPointer] = useState<{ x: number; y: number } | null>(null)
 
@@ -144,7 +142,10 @@ export default function AvatarCanvas({
             selectedRegionId={selectedRegionId}
             viewRequestView={viewRequestView}
             viewRequestId={viewRequestId}
+            autoRotate={autoRotate}
           />
+          {/* `autoRotate` is owned imperatively by CameraRig (drag pause +
+              fly-to gating), so it is intentionally absent from these props. */}
           <OrbitControls
             makeDefault
             enableDamping
@@ -154,7 +155,6 @@ export default function AvatarCanvas({
             maxDistance={ORBIT_CONFIG.maxDistance}
             minPolarAngle={ORBIT_CONFIG.minPolarAngle}
             maxPolarAngle={ORBIT_CONFIG.maxPolarAngle}
-            autoRotate={autoRotate && !reducedMotion}
             autoRotateSpeed={ORBIT_CONFIG.autoRotateSpeed}
           />
         </Canvas>

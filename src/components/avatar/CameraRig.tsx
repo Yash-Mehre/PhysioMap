@@ -2,12 +2,16 @@
 
 /**
  * Camera choreography: damped fly-to on region select / view requests, back
- * to the default framing on deselect, interrupted gracefully by user orbiting.
+ * to the default framing on deselect, interrupted gracefully by user
+ * orbiting. Also owns auto-rotation: the toggle applies whenever no fly-to
+ * animation is in progress, and dragging / touching the canvas pauses the
+ * rotation until a short grace period after release (zooming never pauses
+ * it — the listeners sit on raw pointer events, not wheel).
  */
 
 import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
-import { useFrame, useThree } from '@react-three/fiber'
+import { useFrame, useStore, useThree } from '@react-three/fiber'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import {
   CAMERA_VIEWS,
@@ -23,6 +27,9 @@ export interface CameraRigProps {
   /** View button request: primitive id triggers repeated clicks of same view. */
   viewRequestView: CameraView | 'reset'
   viewRequestId: number
+  /** Auto-rotate toggle — a user's explicit click always works, regardless of
+   * OS reduced-motion settings (the landing hero computes its own default). */
+  autoRotate: boolean
 }
 
 interface Desired {
@@ -30,10 +37,19 @@ interface Desired {
   target: THREE.Vector3
 }
 
-export function CameraRig({ selectedRegionId, viewRequestView, viewRequestId }: CameraRigProps) {
+export function CameraRig({
+  selectedRegionId,
+  viewRequestView,
+  viewRequestId,
+  autoRotate,
+}: CameraRigProps) {
   const camera = useThree((state) => state.camera)
+  const store = useStore()
   const controls = useThree((state) => state.controls) as unknown as OrbitControlsImpl | null
   const desiredRef = useRef<Desired | null>(null)
+  /** Rotation paused while the user drags; resumed after the grace period. */
+  const dragPausedRef = useRef(false)
+  const resumeTimerRef = useRef<number | null>(null)
 
   // Set the initial orbit target once controls exist.
   useEffect(() => {
@@ -72,9 +88,55 @@ export function CameraRig({ selectedRegionId, viewRequestView, viewRequestId }: 
     return () => controls.removeEventListener('start', cancel)
   }, [controls])
 
+  // Drag / touch pauses auto-rotation and resumes it shortly after release.
+  // Raw pointer events (not OrbitControls "start") so wheel-zoom never pauses.
+  useEffect(() => {
+    const domElement = controls?.domElement
+    if (!domElement) return
+    const clearResumeTimer = (): void => {
+      if (resumeTimerRef.current !== null) {
+        window.clearTimeout(resumeTimerRef.current)
+        resumeTimerRef.current = null
+      }
+    }
+    const pause = (): void => {
+      dragPausedRef.current = true
+      clearResumeTimer()
+    }
+    const scheduleResume = (): void => {
+      clearResumeTimer()
+      resumeTimerRef.current = window.setTimeout(() => {
+        dragPausedRef.current = false
+        resumeTimerRef.current = null
+      }, ORBIT_CONFIG.autoRotateResumeDelayMs)
+    }
+    domElement.addEventListener('pointerdown', pause)
+    domElement.addEventListener('pointerup', scheduleResume)
+    domElement.addEventListener('pointercancel', scheduleResume)
+    return () => {
+      clearResumeTimer()
+      domElement.removeEventListener('pointerdown', pause)
+      domElement.removeEventListener('pointerup', scheduleResume)
+      domElement.removeEventListener('pointercancel', scheduleResume)
+    }
+  }, [controls])
+
   useFrame((_, delta) => {
+    // Read controls through the raw store inside the frame loop so this
+    // callback can own the imperative autoRotate flag — the declarative
+    // OrbitControls JSX intentionally omits it.
+    const controls = store.getState().controls as unknown as OrbitControlsImpl | null
+    if (!controls) return
+    // Rotation applies only when toggled on, no fly-to is running and no
+    // drag is in progress.
+    const flying = desiredRef.current !== null
+    const shouldRotate = autoRotate && !flying && !dragPausedRef.current
+    if (controls.autoRotate !== shouldRotate) {
+      controls.autoRotate = shouldRotate
+    }
+
     const desired = desiredRef.current
-    if (!desired || !controls) return
+    if (!desired) return
     const t = 1 - Math.exp(-ORBIT_CONFIG.flyDamping * delta)
     camera.position.lerp(desired.position, t)
     controls.target.lerp(desired.target, t)

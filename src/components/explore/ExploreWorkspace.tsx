@@ -56,6 +56,7 @@ export function ExploreWorkspace() {
   const silhouette = useExplorerStore((state) => state.silhouette)
   const cameraView = useExplorerStore((state) => state.cameraView)
   const cameraRequestId = useExplorerStore((state) => state.cameraRequestId)
+  const autoRotate = useExplorerStore((state) => state.autoRotate)
   const selectRegion = useExplorerStore((state) => state.selectRegion)
   const setHoveredRegion = useExplorerStore((state) => state.setHoveredRegion)
   const setRegionsDrawerOpen = useExplorerStore((state) => state.setRegionsDrawerOpen)
@@ -201,6 +202,7 @@ export function ExploreWorkspace() {
             labelsVisible={labelsVisible}
             silhouette={silhouette}
             interactive={true}
+            autoRotate={autoRotate}
             viewRequestView={cameraView === 'free' ? 'front' : cameraView}
             viewRequestId={cameraRequestId}
             onSelect={handleSelect}

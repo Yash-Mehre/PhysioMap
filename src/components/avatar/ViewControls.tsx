@@ -5,7 +5,6 @@
 import { RotateCcw, RotateCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useExplorerStore } from '@/store/useExplorerStore'
-import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion'
 import { cn } from '@/lib/utils'
 
 const VIEW_BUTTONS = [
@@ -19,7 +18,6 @@ export function ViewControls({ className }: { className?: string }) {
   const requestCameraView = useExplorerStore((state) => state.requestCameraView)
   const autoRotate = useExplorerStore((state) => state.autoRotate)
   const setAutoRotate = useExplorerStore((state) => state.setAutoRotate)
-  const reducedMotion = usePrefersReducedMotion()
 
   return (
     <div
@@ -51,20 +49,23 @@ export function ViewControls({ className }: { className?: string }) {
       >
         <RotateCcw className="h-3.5 w-3.5" />
       </Button>
+      {/* An explicit click always rotates — OS reduced-motion only suppresses
+          motion that starts on its own (the landing hero default). */}
       <Button
         variant="ghost"
         size="icon"
-        aria-label={autoRotate ? 'Stop auto-rotate' : 'Start auto-rotate'}
+        aria-label="Auto-rotate (R)"
         aria-pressed={autoRotate}
-        title={autoRotate ? 'Stop auto-rotate' : 'Auto-rotate'}
+        title="Auto-rotate (R)"
         className={cn(
           'h-7 w-7 rounded-full',
           autoRotate ? 'text-copper hover:text-copper' : 'text-muted-foreground hover:text-foreground',
         )}
-        disabled={reducedMotion}
         onClick={() => setAutoRotate(!autoRotate)}
       >
-        <RotateCw className={cn('h-3.5 w-3.5', autoRotate && 'animate-[spin_3s_linear_infinite]')} />
+        <RotateCw
+          className={cn('h-3.5 w-3.5', autoRotate && 'animate-[spin_3s_linear_infinite] motion-reduce:animate-none')}
+        />
       </Button>
     </div>
   )

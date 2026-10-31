@@ -7,6 +7,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { STORAGE_KEYS } from '@/config/storageKeys'
 import { toDateKey } from '@/lib/health/hydration'
+import { registerStoreReset } from '@/lib/storage/resetAll'
 import { zustandJSONStorage } from '@/lib/storage/storage'
 import type { HydrationEntry, HydrationLog } from '@/types/nutrition'
 
@@ -58,3 +59,6 @@ export const useHydrationStore = create<HydrationState>()(
     { name: STORAGE_KEYS.hydration, version: 1, storage: zustandJSONStorage },
   ),
 )
+
+/** Log out clears the hydration history too (registered store reset). */
+registerStoreReset(() => useHydrationStore.getState().clearAll())

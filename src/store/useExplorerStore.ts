@@ -69,7 +69,13 @@ export const useExplorerStore = create<ExplorerState>()((set) => ({
 
   setMode: (mode) => set({ mode }),
   // Switching mode KEEPS the selected region — "same body part, three modes".
-  selectRegion: (regionId) => set({ selectedRegionId: regionId }),
+  // Selecting a region flies the camera in for inspection, so auto-rotate
+  // switches OFF (the user can toggle it back on).
+  selectRegion: (regionId) =>
+    set((state) => ({
+      selectedRegionId: regionId,
+      autoRotate: regionId !== null ? false : state.autoRotate,
+    })),
   setHoveredRegion: (regionId) => set({ hoveredRegionId: regionId }),
   requestCameraView: (view) =>
     set((state) => ({

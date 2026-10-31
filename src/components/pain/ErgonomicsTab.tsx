@@ -12,6 +12,7 @@ import {
   createLocalStorageStore,
   useLocalStorageStoreValue,
 } from '@/lib/storage/localStorageStore'
+import { registerStoreReset } from '@/lib/storage/resetAll'
 import type { RegionContent } from '@/types'
 
 export interface ErgonomicsTabProps {
@@ -19,6 +20,9 @@ export interface ErgonomicsTabProps {
 }
 
 const deskChecklistStore = createLocalStorageStore<string[]>(STORAGE_KEYS.deskChecklist, [])
+
+/** Log out clears the desk checklist too (registered store reset). */
+registerStoreReset(() => deskChecklistStore.set([]))
 
 function postureLabel(score: number): string {
   if (score >= 85) return 'Excellent desk setup'

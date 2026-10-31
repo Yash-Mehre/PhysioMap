@@ -1,6 +1,7 @@
 /**
  * Global keyboard shortcuts for the explorer:
- * 1 / 2 / 3 → Build / Pain / Info, Escape → deselect. Ignored while typing.
+ * 1 / 2 / 3 → Build / Pain / Info, R → auto-rotate, Escape → deselect.
+ * Ignored while typing.
  */
 
 import { useEffect } from 'react'
@@ -30,10 +31,15 @@ export function useKeyboardShortcuts(): void {
       if (event.metaKey || event.ctrlKey || event.altKey) return
       if (isTypingTarget(event.target)) return
 
-      const { setMode, selectRegion, selectedRegionId } = useExplorerStore.getState()
+      const { setMode, selectRegion, selectedRegionId, autoRotate, setAutoRotate } =
+        useExplorerStore.getState()
       const nextMode = MODE_BY_KEY[event.key]
       if (nextMode) {
         setMode(nextMode)
+        return
+      }
+      if (event.key.toLowerCase() === 'r') {
+        setAutoRotate(!autoRotate)
         return
       }
       if (event.key === 'Escape' && selectedRegionId !== null) {

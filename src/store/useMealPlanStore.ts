@@ -6,6 +6,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { STORAGE_KEYS } from '@/config/storageKeys'
+import { registerStoreReset } from '@/lib/storage/resetAll'
 import { zustandJSONStorage } from '@/lib/storage/storage'
 import { scalePlannedItem } from '@/lib/nutrition/mealPlanner'
 import type { MealPlan, MealSlotId, PlannedFoodItem } from '@/types/nutrition'
@@ -118,3 +119,6 @@ export const useMealPlanStore = create<MealPlanState>()(
     { name: STORAGE_KEYS.mealPlan, version: 1, storage: zustandJSONStorage },
   ),
 )
+
+/** Log out clears the saved meal plan too (registered store reset). */
+registerStoreReset(() => useMealPlanStore.getState().clearPlan())

@@ -36,6 +36,13 @@ export interface MedicalHistoryValue {
 export interface MedicalHistoryFieldProps {
   value: MedicalHistoryValue
   onChange: (next: MedicalHistoryValue) => void
+  /** Controlled "None of the above" acknowledgement (onboarding wizard).
+   * When provided, the checkbox reflects it and clicks report through
+   * `onNoneChange` instead of only clearing implicitly. */
+  noneAcknowledged?: boolean
+  onNoneChange?: (acknowledged: boolean) => void
+  /** Hide the built-in heading (the wizard renders its own above the field). */
+  hideHeader?: boolean
 }
 
 /** Group the flat condition list once per render. */
@@ -43,14 +50,22 @@ const CONDITIONS_BY_GROUP = Object.fromEntries(
   MEDICAL_CONDITION_GROUPS.map((group) => [group, MEDICAL_CONDITIONS.filter((item) => item.group === group)]),
 ) as unknown as Record<MedicalConditionGroup, readonly MedicalCondition[]>
 
-export function MedicalHistoryField({ value, onChange }: MedicalHistoryFieldProps) {
+export function MedicalHistoryField({
+  value,
+  onChange,
+  noneAcknowledged,
+  onNoneChange,
+  hideHeader = false,
+}: MedicalHistoryFieldProps) {
   const fieldId = useId()
   const [query, setQuery] = useState('')
   const [otherInput, setOtherInput] = useState('')
   const [otherError, setOtherError] = useState<string | null>(null)
   const [openGroups, setOpenGroups] = useState<string[]>([])
 
+  const controlled = noneAcknowledged !== undefined
   const noneSelected = value.medicalConditions.length === 0 && value.otherConditions.length === 0
+  const noneChecked = controlled ? noneAcknowledged : noneSelected
   const normalizedQuery = query.trim().toLowerCase()
 
   /** Groups that still contain matches for the current search query. */
@@ -74,6 +89,10 @@ export function MedicalHistoryField({ value, onChange }: MedicalHistoryFieldProp
   }
 
   const handleNoneToggle = (checked: boolean): void => {
+    if (controlled) {
+      onNoneChange?.(checked)
+      return
+    }
     if (checked) onChange({ medicalConditions: [], otherConditions: [] })
   }
 
@@ -102,12 +121,14 @@ export function MedicalHistoryField({ value, onChange }: MedicalHistoryFieldProp
 
   return (
     <section className="space-y-3" aria-label="Medical history">
-      <div className="space-y-1">
-        <h3 className="text-xs font-semibold uppercase tracking-[0.16em] text-copper">
-          Medical history (optional)
-        </h3>
-        <p className="text-xs text-muted-foreground">Saved only on this device. It is never uploaded.</p>
-      </div>
+      {hideHeader ? null : (
+        <div className="space-y-1">
+          <h3 className="text-xs font-semibold uppercase tracking-[0.16em] text-copper">
+            Medical history (optional)
+          </h3>
+          <p className="text-xs text-muted-foreground">Saved only on this device. It is never uploaded.</p>
+        </div>
+      )}
 
       {/* Selected chips */}
       {noneSelected ? null : (
@@ -202,13 +223,13 @@ export function MedicalHistoryField({ value, onChange }: MedicalHistoryFieldProp
       <label
         className={cn(
           'flex cursor-pointer items-center gap-2.5 rounded-lg border px-3 py-2.5 text-xs font-medium transition-colors',
-          noneSelected
+          noneChecked
             ? 'border-copper/50 bg-copper/10 text-copper'
             : 'border-white/8 bg-surface-raised/50 text-muted-foreground hover:border-white/20 hover:text-foreground',
         )}
       >
         <Checkbox
-          checked={noneSelected}
+          checked={noneChecked}
           onCheckedChange={(checked) => handleNoneToggle(checked === true)}
           aria-label="None of the above"
         />

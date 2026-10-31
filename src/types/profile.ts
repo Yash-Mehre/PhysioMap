@@ -21,7 +21,7 @@ export type DietPreference = 'veg' | 'eggetarian' | 'nonveg' | 'vegan'
 export type UnitSystem = 'metric' | 'imperial'
 
 export interface UserProfile {
-  /** Optional display name (≤ 40 chars) shown in the profile sheet header. */
+  /** Required during onboarding; ≤ 40 chars, shown across the app. */
   name?: string
   age?: number
   sex?: Sex
@@ -40,6 +40,10 @@ export interface UserProfile {
   medicalConditions: MedicalConditionId[]
   /** Free-text "Other" conditions (≤ 10 items, each ≤ 40 chars, unique). */
   otherConditions: string[]
+  /** True once the welcome onboarding wizard has been completed. */
+  onboarded: boolean
+  /** ISO date when onboarding was completed. */
+  onboardedAt?: string
 }
 
 export const DEFAULT_PROFILE: UserProfile = {
@@ -51,4 +55,5 @@ export const DEFAULT_PROFILE: UserProfile = {
   trainingGoal: 'hypertrophy',
   medicalConditions: [],
   otherConditions: [],
+  onboarded: false,
 }

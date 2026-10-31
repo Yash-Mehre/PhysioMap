@@ -33,8 +33,11 @@ import {
   PACE_OPTIONS,
   SEX_OPTIONS,
   UNIT_SYSTEM_OPTIONS,
-  healthProfileSchema,
 } from '@/config/healthSchemas'
+import {
+  optionalNameSchema,
+  profileCoreSchema,
+} from '@/lib/validation/profileSchemas'
 import {
   ACTIVITY_LEVEL_LABELS,
   DIET_PREFERENCE_LABELS,
@@ -99,7 +102,7 @@ interface HealthFieldValues {
 
 /** Map a zod failure to "first message per field", keyed by field name. */
 function validateFields(values: HealthFieldValues): FieldErrors {
-  const parsed = healthProfileSchema.safeParse(values)
+  const parsed = profileCoreSchema.safeParse(values)
   if (parsed.success) return {}
   const errors: FieldErrors = {}
   for (const issue of parsed.error.issues) {
@@ -196,10 +199,8 @@ export function ProfileForm({ initialProfile, onSave, onCancel }: ProfileFormPro
 
   const errors = validateFields({ age, sex, heightCm, weightKg, activityLevel, goal, paceKgPerWeek: pace })
   const trimmedName = nameStr.trim()
-  const nameError =
-    trimmedName.length > PROFILE_NAME_MAX_LENGTH
-      ? `Name must be ${PROFILE_NAME_MAX_LENGTH} characters or fewer.`
-      : undefined
+  const nameParsed = optionalNameSchema.safeParse(trimmedName)
+  const nameError = nameParsed.success ? undefined : nameParsed.error.issues[0]?.message
   const isValid = Object.keys(errors).length === 0 && nameError === undefined
 
   const draft: UserProfile = {

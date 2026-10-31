@@ -17,6 +17,31 @@ Built by **Team Psycho-Coderz** for the **Zinnovatio Hackathon**.
 
 ## Features
 
+### Welcome / onboarding (`/welcome`)
+
+The app opens on a polished **welcome page** the first time it launches — before anything else is
+reachable. There is **no real authentication, no passwords, no server accounts**: onboarding just
+creates the local profile on this device.
+
+- **5-step wizard** (react-hook-form + zod, shared schemas in `lib/validation/profileSchemas.ts`):
+  ① About you (name, age, sex) → ② Your body (unit toggle with live metric ⇄ imperial conversion,
+  height, weight, activity-level cards, a **live BMI preview chip**) → ③ Goals & food (weight goal,
+  pace when losing/gaining, diet preference, foods to avoid, training level, equipment, training
+  goal) → ④ **Medical history (required)** — select conditions or tick "None of the above" — →
+  ⑤ Review (label/value sections with per-section **Edit** links, "Your numbers" strip, **Enter
+  PhysioMap**). Each step validates before Next, Back never loses data, Enter submits the step.
+- **Demo quick-fill chips** for presentations (Healthy athlete · Desk worker · Hypertension ·
+  Type 2 diabetes · Knee osteoarthritis · Heart condition, defined in `config/demoProfiles.ts`) —
+  a chip pre-fills the whole form; the presenter still walks the steps.
+- **Onboarding gate** (`components/layout/OnboardingGate.tsx`, mounted once in the root layout):
+  until the profile says `onboarded`, every route except `/welcome` is replaced with the wizard —
+  behind a branded splash while hydrating/redirecting so protected pages never flash.
+  An already-onboarded user opening `/welcome` gets a **"Welcome back, {name}"** card (Continue /
+  Log out & start over). The first-visit disclaimer popup still shows exactly once, on top of the
+  welcome page.
+- **Migration:** the profile store is versioned (v3); profiles saved before this update with the
+  core numbers present are treated as already onboarded.
+
 ### The 3D explorer (`/explore`)
 
 - **3D procedural anatomical avatar** — a data-driven "muscle man" (≈70 shared-geometry meshes)
@@ -38,18 +63,33 @@ Built by **Team Psycho-Coderz** for the **Zinnovatio Hackathon**.
   injury prevention, and a 10-question seeded quiz ("Find it" — tap the region on the body;
   "Name it" — a region glows, pick from 4 options) with score, streak and persisted best score.
 - **Explorer UX** — shareable URLs (`/explore?mode=pain&region=knees`), keyboard shortcuts
-  (`1/2/3` switch modes keeping the region, `Esc` deselects), mobile bottom sheet with
-  peek/half/full snaps, a first-visit disclaimer popup (mounted once in the root layout, shown
-  on the first page opened, never again after "I understand — continue"), full-width sticky
-  header (logo hard-left, nav + profile icon hard-right), dark medical-tech design system.
+  (`1/2/3` switch modes keeping the region, `R` toggles auto-rotate, `Esc` deselects), mobile
+  bottom sheet with peek/half/full snaps, a first-visit disclaimer popup (mounted once in the root
+  layout, shown on the first page opened, never again after "I understand — continue"), full-width
+  sticky header (logo hard-left, nav + profile icon hard-right), dark medical-tech design system.
+- **Auto-rotate (fixed)** — the view-control button now really spins the figure: a smooth,
+  continuous 360° loop (≈ 20 s per turn, `ORBIT_CONFIG.autoRotateSpeed = 3`) that runs forever
+  until toggled off. Dragging/touching the canvas pauses it and it resumes ≈ 1.2 s after release;
+  zooming never pauses it; selecting a region switches it off (the camera flies in for
+  inspection) while Reset/Front/Back/Left/Right keep the toggle; `CameraRig` suspends rotation
+  during fly-to so the two never fight. An explicit click **always** works, even with OS
+  reduced-motion enabled — reduced motion only suppresses motion that starts on its own (the
+  landing hero's default rotation).
 
 ### Health & Nutrition Suite (`/health`)
 
 - **Profile sheet (header user icon)** — the ONE profile UI of the app: a right-side sheet
   (full width on mobile, ~440 px on desktop) with a read-only view ("Your numbers" strip with
   BMI + daily calories, clean label/value rows per section) and an edit mode (all fields below +
-  name + medical history). Save keeps you in the sheet; Cancel discards edits. Every
-  "Complete your profile" empty state opens it in edit mode instead of navigating.
+  name + medical history; the same zod schemas as the wizard). Save keeps you in the sheet;
+  Cancel discards edits. Every "Complete your profile" empty state opens it in edit mode instead
+  of navigating.
+- **Log out** — the profile sheet's quieter secondary action opens a confirmation dialog
+  ("Log out and clear this device?") and then **clears every persisted store on the device** —
+  profile, workout plan, pain log, hydration, meal plan, quiz best score and the desk checklist —
+  through the reset registry in `lib/storage/resetAll.ts` (the disclaimer acknowledgement is
+  deliberately kept, so the first-visit popup never reappears). The wizard then starts empty on
+  `/welcome`.
 - **Medical history (in the profile)** — 100+ user-selectable conditions in 11 collapsible
   groups with search, selected-chip rows, an exclusive "None of the above" and a validated
   free-text "Other" list (≤ 10 entries × 40 chars). **Privacy: it is saved only to
@@ -173,24 +213,31 @@ checked", no medicine names). `lib/pain/__tests__/guidance.test.ts` locks all of
 
 ```
 src/
-  app/                layout.tsx (SEO/OG), globals.css, page.tsx (landing), explore/, health/,
-                      not-found.tsx, error.tsx, loading.tsx, sitemap.ts, icon.svg
+  app/                layout.tsx (SEO/OG), globals.css, page.tsx (landing), welcome/ (onboarding
+                      wizard page — immersive, no chrome), explore/, health/, not-found.tsx,
+                      error.tsx, loading.tsx, sitemap.ts, icon.svg
     api/regions/      GET list + GET [id] (404 on unknown, zod-validated)
     api/pain/assess/  POST — zod body → pure rule engine → typed result
     api/nutrition/    POST calculate (BMI/BMR/TDEE/targets/water), POST meal-plan,
                       GET food-search (optional Open Food Facts)
     api/health-data/  GET status (active providers), GET exercise-image (optional wger)
   components/
-    layout/           SiteHeader (full-width, mobile Sheet menu, profile trigger), SiteFooter
-                      (+ DataSourcesDialog), DisclaimerGate (root-level first-visit popup),
-                      ModeSwitcher, Providers (Query + Toaster + DisclaimerGate + ProfileSheet)
-    profile/          ProfileSheet, ProfileView (read-only), ProfileForm (edit),
-                      MedicalHistoryField — the ONE profile UI
+    layout/           SiteHeader (full-width, mobile Sheet menu, profile trigger), SiteChrome
+                      (layout-level header/footer, suppressed on /welcome and /), SiteFooter
+                      (+ DataSourcesDialog), OnboardingGate (splash + /welcome redirect),
+                      BrandedSplash, DisclaimerGate (root-level first-visit popup), ModeSwitcher,
+                      Providers (Query + Toaster + OnboardingGate + DisclaimerGate + ProfileSheet)
+    welcome/          WelcomeClient (wizard vs "Welcome back"), OnboardingWizard (RHF + zod),
+                      BrandPanel, DemoChips, steps/ (AboutStep, BodyStep, GoalsStep,
+                      MedicalStep, ReviewStep + stepUi)
+    profile/          ProfileSheet (view/edit + Log out), ProfileView (read-only), ProfileForm
+                      (edit, shared schemas), MedicalHistoryField — the ONE profile UI
     landing/          LandingHeader (full-width, centered xl anchors), LandingHero, 9 section
                       components, Reveal, MiniMacroDonut
     avatar/           AvatarCanvas, ProceduralAvatar, GltfAvatar (optional GLTF path),
-                      MuscleMesh, CameraRig, RegionTooltip/Labels, ViewControls, WebGLFallback,
-                      geometry.ts, useAvatarMaterials.ts, CanvasErrorBoundary
+                      MuscleMesh, CameraRig (fly-to + auto-rotate ownership), RegionTooltip/
+                      Labels, ViewControls, WebGLFallback, geometry.ts, useAvatarMaterials.ts,
+                      CanvasErrorBoundary
     explore/          ExploreWorkspace, RegionList, ContextPanel, PanelEmptyState, MobileSheet
     build/ pain/ info/ mode panels (one responsibility per file)
     health/           HealthSuiteClient (URL-synced tabs + key numbers), CalculatorsTab, BmiGauge,
@@ -202,19 +249,22 @@ src/
   config/             site, theme, regions, camera, labels, assessment, painSchemas,
                       ergonomics, storageKeys, profileOptions, nutrition, healthSchemas,
                       healthTabs, landingContent, team, medicalConditions, conditionNotes,
-                      guidance/ (regionProfiles, redFlagGuidance, sensationGuidance,
-                      aggravatorGuidance, onsetGuidance, durationGuidance, severityGuidance),
-                      avatar/*
+                      demoProfiles (wizard quick-fill chips), guidance/ (regionProfiles,
+                      redFlagGuidance, sensationGuidance, aggravatorGuidance, onsetGuidance,
+                      durationGuidance, severityGuidance), avatar/*
   data/regions/       headNeck, upperBody, core, lowerBody — one RegionContent per region (19 total)
   data/foods.ts       curated India-friendly food database (40 items, per stated serving)
-  hooks/              useRegionContent, useUrlSync, useRegionVisualState, useKeyboardShortcuts,
-                      useHydrated, usePrefersReducedMotion, useExerciseImage, use-mobile
+  hooks/              useRegionContent, useUrlSync, useRegionVisualState, useKeyboardShortcuts
+                      (1/2/3 + R + Esc), useHydrated, usePrefersReducedMotion, useExerciseImage,
+                      use-mobile
   lib/                build/ pain/ (assess, guidance, redFlags, conditionNotes, heat + tests),
                       quiz/ health/ (incl. medicalHistory) nutrition/ (pure logic), pdf/,
-                      providers/, storage/
+                      providers/, storage/ (helpers + resetAll.ts logout registry), validation/
+                      (profileSchemas.ts — shared wizard/edit zod schemas)
   services/           regionService, painService, nutritionService (the only fetchers)
-  store/              useExplorerStore (UI state) + persisted workout / pain log / profile
-                      (v2, migrated) / quiz-best / hydration / meal-plan + useProfilePanel
+  store/              useExplorerStore (UI state; region select switches auto-rotate off) +
+                      persisted workout / pain log / profile (v3, migrated; onboarded flag) /
+                      quiz-best / hydration / meal-plan + useProfilePanel
   types/              region, anatomy, exercise, pain, profile, quiz, avatar, nutrition
 ```
 
@@ -253,19 +303,23 @@ src/
   helper (`lib/storage/`), which safely handles SSR, missing `window` and quota errors.
   Anything that reads persisted state renders a stable placeholder until hydration
   (`useHydrated` / `useSyncExternalStore`) — the console stays mismatch-free.
+- **Every persisted store registers a reset** in `lib/storage/resetAll.ts`; "Log out" wipes all
+  `physiomap:v1:` keys (except the disclaimer acknowledgement) and calls each registered reset,
+  so no store can be forgotten.
 - The workspace URL (`/explore?mode=&region=`) and the health tab URL (`/health?tab=`) are the
   single sources of truth for deep links; `useUrlSync` restores them on load and follows
   browser back/forward. Units are always stored metric; imperial is display-only.
 
 ## Accessibility & performance
 
-Keyboard-operable region list and mode switcher (with `1/2/3` + `Esc`), visible focus rings,
-AA contrast, ARIA roles on every control, `prefers-reduced-motion` disables auto-rotate, avatar
-pulses, reveal-on-scroll and celebration animations. The 3D scene caps `dpr` to `[1, 2]`, shares
-geometries and per-region materials, pushes visual states imperatively (no mesh re-renders on
-hover) and disposes geometries/materials on unmount. WebGL-less browsers get the searchable
-Region List. Charts (Recharts) and the PDF stack are lazy-loaded; fonts ship through
-`next/font`.
+Keyboard-operable region list and mode switcher (with `1/2/3` + `R` + `Esc`), visible focus rings,
+AA contrast, ARIA roles on every control. `prefers-reduced-motion` disables the landing hero's
+self-starting rotation, avatar pulses, reveal-on-scroll and celebration animations — but an
+**explicit** auto-rotate click always works (the toggle is never disabled). The 3D scene caps `dpr`
+to `[1, 2]`, shares geometries and per-region materials, pushes visual states imperatively (no
+mesh re-renders on hover) and disposes geometries/materials on unmount. WebGL-less browsers get
+the searchable Region List. Charts (Recharts) and the PDF stack are lazy-loaded; fonts ship
+through `next/font`.
 
 ## Team
 

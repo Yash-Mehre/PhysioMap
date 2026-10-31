@@ -3,6 +3,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { STORAGE_KEYS } from '@/config/storageKeys'
+import { registerStoreReset } from '@/lib/storage/resetAll'
 import { zustandJSONStorage } from '@/lib/storage/storage'
 import type { PainLogEntry, PainUrgency, RegionId, Sensation } from '@/types'
 
@@ -50,3 +51,6 @@ export const usePainLogStore = create<PainLogState>()(
     { name: STORAGE_KEYS.painLog, version: 1, storage: zustandJSONStorage },
   ),
 )
+
+/** Log out clears the pain log too (registered store reset). */
+registerStoreReset(() => usePainLogStore.getState().clearAll())

@@ -59,7 +59,10 @@ export const ORBIT_CONFIG = {
   maxDistance: 5,
   maxPolarAngle: Math.PI * 0.88,
   minPolarAngle: Math.PI * 0.12,
-  autoRotateSpeed: 0.9,
+  /** Auto-rotation speed — 3 = one full 360° turn in ≈ 20 s. */
+  autoRotateSpeed: 3,
+  /** Grace period (ms) after a drag ends before auto-rotation resumes. */
+  autoRotateResumeDelayMs: 1200,
   /** Exponential damping factor for camera fly-to transitions. */
   flyDamping: 4.5,
 } as const

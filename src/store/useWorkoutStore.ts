@@ -6,6 +6,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { STORAGE_KEYS } from '@/config/storageKeys'
+import { registerStoreReset } from '@/lib/storage/resetAll'
 import { zustandJSONStorage } from '@/lib/storage/storage'
 import type { Exercise, RegionId, TrainingGoal } from '@/types'
 import { getSetScheme } from '@/lib/build/setSchemes'
@@ -74,3 +75,6 @@ export const useWorkoutStore = create<WorkoutState>()(
     { name: STORAGE_KEYS.workout, version: 1, storage: zustandJSONStorage },
   ),
 )
+
+/** Log out clears the saved workout plan too (registered store reset). */
+registerStoreReset(() => useWorkoutStore.getState().clearAll())
