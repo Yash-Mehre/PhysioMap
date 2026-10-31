@@ -19,6 +19,9 @@ const productSchema = z.object({
   product_name: z.string().min(2),
   brands: z.string().nullish(),
   image_small_url: z.url().nullish(),
+  image_url: z.url().nullish(),
+  ingredients_text: z.string().nullish(),
+  nutrition_grades: z.string().nullish(),
   nutriments: z
     .object({
       'energy-kcal_100g': z.coerce.number().positive(),
@@ -50,7 +53,7 @@ export async function searchOpenFoodFacts(query: string): Promise<FoodSearchResu
     const params = new URLSearchParams({
       search_terms: trimmed,
       page_size: String(PAGE_SIZE),
-      fields: 'code,product_name,brands,image_small_url,nutriments',
+      fields: 'code,product_name,brands,image_small_url,image_url,ingredients_text,nutrition_grades,nutriments',
     })
     const response = await fetch(`https://world.openfoodfacts.org/api/v2/search?${params.toString()}`, {
       signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
@@ -68,7 +71,9 @@ export async function searchOpenFoodFacts(query: string): Promise<FoodSearchResu
             proteinPer100g: product.nutriments?.proteins_100g ?? 0,
             carbsPer100g: product.nutriments?.carbohydrates_100g ?? 0,
             fatPer100g: product.nutriments?.fat_100g ?? 0,
-            imageUrl: product.image_small_url ?? undefined,
+            imageUrl: product.image_url ?? product.image_small_url ?? undefined,
+            ingredients: product.ingredients_text ?? undefined,
+            nutritionGrade: product.nutrition_grades ?? undefined,
           }))
           .filter((item) => item.kcalPer100g > 0)
       }

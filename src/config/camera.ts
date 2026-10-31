@@ -29,6 +29,7 @@ export const CAMERA_VIEWS: Record<CameraView, CameraPreset> = {
 
 /** One close-up preset per region — keeps the demo snappy and guided. */
 export const REGION_CAMERA_PRESETS: Record<RegionId, CameraPreset> = {
+  head: { position: [0, 1.68, 0.75], target: [0, 1.66, 0], side: 'front' },
   neck: { position: [0, 1.6, 1.15], target: [0, 1.52, 0], side: 'front' },
   traps: { position: [0, 1.55, -1.35], target: [0, 1.45, 0], side: 'back' },
   shoulders: { position: [0, 1.44, 1.55], target: [0, 1.4, 0], side: 'front' },

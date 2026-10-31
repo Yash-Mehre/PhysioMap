@@ -6,6 +6,7 @@ import { isRegionId } from '@/config/regions'
 import { dataProvider } from '@/lib/providers'
 import { assessPain } from '@/lib/pain/assess'
 import type { PainAssessmentInput } from '@/types'
+import { writeApplicationError } from '@/lib/logging/audit'
 
 /** Zod schema mirroring `PainAssessmentInput` (enums from `@/config/painSchemas`). */
 const assessSchema = z.object({
@@ -49,7 +50,8 @@ export async function POST(request: NextRequest) {
     let body: unknown
     try {
       body = await request.json()
-    } catch {
+    } catch (error) {
+      await writeApplicationError(error, 'pain-assess', '/api/pain/assess')
       return NextResponse.json(
         { error: { code: 'invalid-json', message: 'Request body must be valid JSON.' } },
         { status: 400 },

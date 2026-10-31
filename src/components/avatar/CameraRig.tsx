@@ -30,6 +30,7 @@ export interface CameraRigProps {
   /** Auto-rotate toggle — a user's explicit click always works, regardless of
    * OS reduced-motion settings (the landing hero computes its own default). */
   autoRotate: boolean
+  compactViewport: boolean
 }
 
 interface Desired {
@@ -42,6 +43,7 @@ export function CameraRig({
   viewRequestView,
   viewRequestId,
   autoRotate,
+  compactViewport,
 }: CameraRigProps) {
   const camera = useThree((state) => state.camera)
   const store = useStore()
@@ -54,10 +56,15 @@ export function CameraRig({
   // Set the initial orbit target once controls exist.
   useEffect(() => {
     if (controls) {
+      camera.position.set(
+        DEFAULT_CAMERA.position[0],
+        DEFAULT_CAMERA.position[1],
+        compactViewport ? 3.65 : DEFAULT_CAMERA.position[2],
+      )
       controls.target.set(...DEFAULT_CAMERA.target)
       controls.update()
     }
-  }, [controls])
+  }, [camera, compactViewport, controls])
 
   // Region selection → fly to the region preset (or back to default framing).
   useEffect(() => {

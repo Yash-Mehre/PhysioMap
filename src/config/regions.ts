@@ -5,6 +5,7 @@
  */
 
 export const REGION_IDS = [
+  'head',
   'neck',
   'traps',
   'shoulders',
@@ -44,6 +45,7 @@ export interface Region {
 }
 
 export const REGIONS: readonly Region[] = [
+  { id: 'head', label: 'Head', group: 'head-neck', sides: ['front', 'back'] },
   { id: 'neck', label: 'Neck', group: 'head-neck', sides: ['front', 'back'] },
   { id: 'traps', label: 'Traps', group: 'head-neck', sides: ['back'] },
   { id: 'shoulders', label: 'Shoulders', group: 'upper-body', sides: ['front', 'back'] },

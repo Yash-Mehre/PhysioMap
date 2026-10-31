@@ -8,7 +8,7 @@ import { isOpenFoodFactsEnabled, searchOpenFoodFacts } from '@/lib/providers/ope
  * the client can message honestly without treating it as an error.
  */
 export async function GET(request: NextRequest) {
-  const query = request.nextUrl.searchParams.get('q') ?? ''
+  const query = request.nextUrl.searchParams.get('barcode') ?? request.nextUrl.searchParams.get('q') ?? ''
   if (!isOpenFoodFactsEnabled()) {
     return NextResponse.json({ enabled: false, source: 'open-food-facts', results: [] })
   }

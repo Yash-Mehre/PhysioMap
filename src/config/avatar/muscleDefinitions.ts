@@ -54,6 +54,13 @@ export const MUSCLE_DEFINITIONS: readonly MuscleShapeDefinition[] = [
     material: 'underlay-grey',
   },
   {
+    id: 'head-region',
+    regionId: 'head',
+    shape: { kind: 'ellipsoid', size: [0.11, 0.13, 0.12] },
+    position: [0, 1.68, 0.012],
+    side: 'front',
+  },
+  {
     id: 'underlay-neck',
     regionId: null,
     shape: { kind: 'capsule', radius: 0.048, length: 0.08 },

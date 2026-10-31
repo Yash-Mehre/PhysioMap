@@ -23,6 +23,14 @@ export interface RegionGuidanceProfile {
 }
 
 export const REGION_GUIDANCE_PROFILES: Record<RegionId, RegionGuidanceProfile> = {
+  head: {
+    areaName: 'head',
+    specialist: 'doctor or urgent-care clinician',
+    safeMovement: 'Rest in a quiet environment, hydrate, and avoid strenuous activity while symptoms are present.',
+    avoidMovement: 'Avoid forceful neck manipulation and driving if dizziness, visual changes, or confusion are present.',
+    commonLoadingFactors: 'Dehydration, poor sleep, screen strain, stress, and jaw clenching can contribute to head discomfort.',
+    urgentSigns: 'A sudden severe headache, weakness, confusion, fainting, vision loss, fever with a stiff neck, or head injury needs urgent care.',
+  },
   neck: {
     areaName: 'neck',
     specialist: 'doctor or spine specialist',

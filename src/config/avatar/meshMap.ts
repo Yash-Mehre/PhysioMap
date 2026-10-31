@@ -11,6 +11,9 @@ import type { RegionId } from '@/config/regions'
  * with `contains`). Meshes with no mapping are rendered as neutral underlay.
  */
 export const GLTF_MESH_MAP: Record<string, RegionId> = {
+  Head: 'head',
+  Skull: 'head',
+  Face: 'head',
   Sternocleidomastoideus: 'neck',
   neck: 'neck',
   Trapezius: 'traps',

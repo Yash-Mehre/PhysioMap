@@ -145,19 +145,42 @@ bun run type-check   # tsc --noEmit
 bun run test         # vitest unit suite (lib/health, meal planner, pain engine, quiz)
 ```
 
-No logins, no payments, no external API keys, no external assets — the whole experience is
-procedural (3D + SVG + CSS) and works fully offline from curated local datasets.
+The app remains usable with the bundled curated datasets, while production deployments can use
+PostgreSQL-backed accounts and audit logs. Passwords are never stored directly: only scrypt
+password hashes are persisted, and sessions use an httpOnly cookie.
 
-### Optional env flags (all default OFF — see `.env.example`)
+### Environment variables (see `.env.example`)
 
 | Flag | Effect |
 | --- | --- |
-| `ENABLE_WGER=true` | Attach exercise thumbnails in Build mode from the public wger API (name match, 4 s timeout, in-memory cache, silent fallback to no image). |
-| `ENABLE_OPEN_FOOD_FACTS=true` | Power the Meal Planner's "Search a food" dialog with live per-100 g data from Open Food Facts. |
+| `DATABASE_URL` | PostgreSQL connection string for users, sessions and audit logs. |
+| `ENABLE_WGER=true` | Attach exercise thumbnails in Build mode from the public wger API. Enabled in the Vercel template. |
+| `ENABLE_OPEN_FOOD_FACTS=true` | Power the Meal Planner's "Search a food" dialog with live per-100 g data. Enabled in the Vercel template. |
 | `NEXT_PUBLIC_AVATAR_MODEL_URL` | Load a custom GLTF avatar instead of the procedural one. |
 
 `GET /api/health-data/status` reports which providers are active (local is always true), and the
 **DataSourcesDialog** (footer + landing Engine section) shows it honestly.
+
+### Accounts and logging
+
+The following server routes are available for a production database:
+
+- `POST /api/auth/register` — create an account and start a session.
+- `POST /api/auth/login` — authenticate with email and password.
+- `POST /api/auth/logout` — clear the current session.
+- `GET /api/auth/me` — return the current user, if authenticated.
+
+Login, registration, failed-login and logout events are written to `AuditLog`. Configure a hosted
+PostgreSQL database (Vercel Postgres, Neon or another PostgreSQL provider), set `DATABASE_URL` in
+Vercel, then run `bun run db:push` once against that database before the first deployment.
+
+### Vercel deployment
+
+1. Import `PhysioMap/V2.0` as the Vercel project.
+2. Set `DATABASE_URL`, `ENABLE_WGER=true` and `ENABLE_OPEN_FOOD_FACTS=true` in the Vercel
+   project environment settings.
+3. Run `bun run db:push` locally with the production `DATABASE_URL`, or use a protected migration
+   job, then deploy. `vercel.json` configures the Next.js framework and frozen Bun install.
 
 ## Architecture
 

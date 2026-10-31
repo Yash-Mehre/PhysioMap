@@ -4,6 +4,7 @@
  */
 
 import type { RegionId } from '@/config/regions'
+import { REGION_BY_ID } from '@/config/regions'
 import type { RegionContent } from '@/types'
 import { headNeckRegions } from '@/data/regions/headNeck'
 import { upperBodyRegions } from '@/data/regions/upperBody'
@@ -11,6 +12,7 @@ import { coreRegions } from '@/data/regions/core'
 import { lowerBodyRegions } from '@/data/regions/lowerBody'
 
 export const ALL_REGION_CONTENTS: readonly RegionContent[] = [
+  { ...headNeckRegions[0], region: REGION_BY_ID.head },
   ...headNeckRegions,
   ...upperBodyRegions,
   ...coreRegions,

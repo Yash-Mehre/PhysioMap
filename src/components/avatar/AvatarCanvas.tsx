@@ -6,7 +6,7 @@
  * contract. Handles WebGL detection, the hover tooltip and canvas errors.
  */
 
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { ContactShadows, OrbitControls } from '@react-three/drei'
 import { AVATAR_COLORS } from '@/config/theme'
@@ -54,8 +54,16 @@ export default function AvatarCanvas({
   onOpenRegions,
 }: AvatarCanvasPropsWithView) {
   const webglSupported = useMemo(() => detectWebGLSupport(), [])
+  const [compactViewport, setCompactViewport] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const [pointer, setPointer] = useState<{ x: number; y: number } | null>(null)
+
+  useEffect(() => {
+    const updateViewport = (): void => setCompactViewport(window.innerWidth < 640)
+    updateViewport()
+    window.addEventListener('resize', updateViewport)
+    return () => window.removeEventListener('resize', updateViewport)
+  }, [])
 
   const handlePointerMove = useCallback(
     (event: React.PointerEvent<HTMLDivElement>) => {
@@ -81,7 +89,7 @@ export default function AvatarCanvas({
   return (
     <div
       ref={containerRef}
-      className={`relative h-full w-full ${hoveredRegionId !== null && interactive ? 'cursor-pointer' : 'cursor-grab'}`}
+      className={`relative h-full min-h-[320px] w-full touch-none ${hoveredRegionId !== null && interactive ? 'cursor-pointer' : 'cursor-grab'}`}
       onPointerMove={handlePointerMove}
       onPointerLeave={handlePointerLeave}
       role="img"
@@ -143,6 +151,7 @@ export default function AvatarCanvas({
             viewRequestView={viewRequestView}
             viewRequestId={viewRequestId}
             autoRotate={autoRotate}
+            compactViewport={compactViewport}
           />
           {/* `autoRotate` is owned imperatively by CameraRig (drag pause +
               fly-to gating), so it is intentionally absent from these props. */}

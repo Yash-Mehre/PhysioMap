@@ -189,6 +189,8 @@ export interface FoodSearchResult {
   carbsPer100g: number
   fatPer100g: number
   imageUrl?: string
+  ingredients?: string
+  nutritionGrade?: string
 }
 
 export interface FoodSearchResponse {

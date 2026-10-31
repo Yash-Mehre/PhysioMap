@@ -10,6 +10,7 @@ import { SENSATION_LABELS } from '@/config/assessment'
 import { URGENCY_COLORS } from '@/config/theme'
 import { regionSeverityTrend, severityToHeat, severityTrendPoints } from '@/lib/pain/heat'
 import { HEAT_COLORS } from '@/config/theme'
+import { useState } from 'react'
 import { useHydrated } from '@/hooks/useHydrated'
 import { usePainLogStore } from '@/store/usePainLogStore'
 import type { PainLogEntry, RegionContent } from '@/types'
@@ -38,13 +39,14 @@ function SeverityBadge({ severity }: { severity: number }) {
 
 export function PainLogTab({ content }: PainLogTabProps) {
   const hydrated = useHydrated()
+  const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null)
   const entries = usePainLogStore((state) => state.entries)
   const removeEntry = usePainLogStore((state) => state.removeEntry)
   const clearAll = usePainLogStore((state) => state.clearAll)
 
-  const regionEntries = entries.filter((entry) => entry.regionId === content.region.id)
   const trend = regionSeverityTrend(entries, content.region.id)
   const trendPoints = severityTrendPoints(trend)
+  const selectedEntry = entries.find((entry) => entry.id === selectedEntryId) ?? null
 
   if (!hydrated) {
     return <div className="h-24 animate-pulse rounded-xl bg-white/5" aria-busy="true" />
@@ -106,20 +108,40 @@ export function PainLogTab({ content }: PainLogTabProps) {
           </div>
           <ul className="space-y-2">
             {entries.map((entry) => (
-              <EntryRow key={entry.id} entry={entry} onRemove={() => removeEntry(entry.id)} />
+              <EntryRow
+                key={entry.id}
+                entry={entry}
+                selected={entry.id === selectedEntryId}
+                onSelect={() => setSelectedEntryId(entry.id)}
+                onRemove={() => {
+                  removeEntry(entry.id)
+                  if (selectedEntryId === entry.id) setSelectedEntryId(null)
+                }}
+              />
             ))}
           </ul>
+          {selectedEntry ? <EntryDetails entry={selectedEntry} /> : null}
         </>
       )}
     </div>
   )
 }
 
-function EntryRow({ entry, onRemove }: { entry: PainLogEntry; onRemove: () => void }) {
+function EntryRow({
+  entry,
+  selected,
+  onSelect,
+  onRemove,
+}: {
+  entry: PainLogEntry
+  selected: boolean
+  onSelect: () => void
+  onRemove: () => void
+}) {
   return (
-    <li className="flex items-start gap-3 rounded-xl border border-white/8 bg-surface-raised/60 p-3">
+    <li className={`flex items-start gap-3 rounded-xl border bg-surface-raised/60 p-3 ${selected ? 'border-mode-pain/60' : 'border-white/8'}`}>
       <SeverityBadge severity={entry.severity} />
-      <div className="min-w-0 flex-1">
+      <button type="button" className="min-w-0 flex-1 text-left" onClick={onSelect} aria-expanded={selected}>
         <p className="flex flex-wrap items-center gap-x-2 text-xs font-semibold text-foreground">
           {REGION_BY_ID[entry.regionId].label}
           <span className="font-normal text-muted-foreground">{formatEntryDate(entry.date)}</span>
@@ -137,7 +159,7 @@ function EntryRow({ entry, onRemove }: { entry: PainLogEntry; onRemove: () => vo
             {entry.sensations.map((sensation) => SENSATION_LABELS[sensation]).join(', ')}
           </p>
         ) : null}
-      </div>
+      </button>
       <Button
         variant="ghost"
         size="icon"
@@ -148,5 +170,26 @@ function EntryRow({ entry, onRemove }: { entry: PainLogEntry; onRemove: () => vo
         <Trash2 className="h-3.5 w-3.5" />
       </Button>
     </li>
+  )
+}
+
+function EntryDetails({ entry }: { entry: PainLogEntry }) {
+  return (
+    <section className="rounded-xl border border-mode-pain/30 bg-mode-pain/5 p-4" aria-label="Pain log details">
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="text-xs font-semibold uppercase tracking-[0.16em] text-mode-pain">
+          Log details
+        </h3>
+        <span className="text-[11px] text-muted-foreground">
+          {new Date(entry.date).toLocaleString()}
+        </span>
+      </div>
+      <dl className="mt-3 grid gap-2 text-xs sm:grid-cols-2">
+        <div><dt className="text-muted-foreground">Region</dt><dd className="font-medium">{REGION_BY_ID[entry.regionId].label}</dd></div>
+        <div><dt className="text-muted-foreground">Severity</dt><dd className="font-medium">{entry.severity} / 10</dd></div>
+        <div className="sm:col-span-2"><dt className="text-muted-foreground">Symptoms</dt><dd className="font-medium">{entry.sensations.map((item) => SENSATION_LABELS[item]).join(', ') || 'Not recorded'}</dd></div>
+        <div><dt className="text-muted-foreground">Urgency</dt><dd className="font-medium">{entry.urgency ?? 'Not assessed'}</dd></div>
+      </dl>
+    </section>
   )
 }

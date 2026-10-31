@@ -109,7 +109,7 @@ export function ExploreWorkspace() {
   }, [mode, selectedRegionId])
 
   return (
-    <div className="flex h-[calc(100dvh-4rem)] w-full overflow-hidden">
+    <div className="flex h-[calc(100dvh-4rem)] min-h-[560px] w-full overflow-hidden">
       {/* Left: region list (desktop) */}
       {listOpenDesktop ? (
         <aside
@@ -142,7 +142,7 @@ export function ExploreWorkspace() {
               variant="outline"
               size="sm"
               onClick={openRegionsBrowser}
-              className="border-white/15 bg-surface/85 text-muted-foreground backdrop-blur-md hover:text-foreground lg:hidden"
+              className="border-white/15 bg-surface/85 text-muted-foreground backdrop-blur-md hover:text-foreground"
             >
               <List className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" /> Regions
             </Button>
@@ -194,7 +194,7 @@ export function ExploreWorkspace() {
           <ViewControls />
         </div>
 
-        <div className="h-full w-full">
+        <div className="h-full min-h-[320px] w-full">
           <AvatarCanvas
             selectedRegionId={selectedRegionId}
             hoveredRegionId={hoveredRegionId}
