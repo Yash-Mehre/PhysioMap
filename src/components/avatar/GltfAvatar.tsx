@@ -61,7 +61,7 @@ export function GltfAvatar({
   skeletonOpacity,
   spreadStructures,
 }: GltfAvatarProps) {
-  const url = process.env.NEXT_PUBLIC_AVATAR_MODEL_URL ?? ''
+  const url = process.env.NEXT_PUBLIC_AVATAR_MODEL_URL || '/model/anatomy.glb'
   const { scene } = useGLTF(url)
   const factory = useAvatarMaterialFactory()
   const reducedMotion = usePrefersReducedMotion()
@@ -183,6 +183,7 @@ export function GltfAvatar({
 
   // Selected-region outline shells.
   const outlinedRegions = REGION_IDS.filter((regionId) => regionStyles[regionId]?.outline)
+  void hoveredRegionId
 
   return (
     <group>
@@ -207,8 +208,6 @@ export function GltfAvatar({
         </group>
       ))}
       <RegionLabels anchors={prepared.anchors} labelsVisible={labelsVisible} />
-      {/* Hover tracking flows through onHover into regionStyles. */}
-      <span hidden>{hoveredRegionId}</span>
     </group>
   )
 }

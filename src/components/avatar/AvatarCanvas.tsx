@@ -20,7 +20,7 @@ import { CanvasErrorBoundary } from '@/components/avatar/CanvasErrorBoundary'
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion'
 import type { AvatarCanvasProps } from '@/types'
 
-const MODEL_URL = process.env.NEXT_PUBLIC_AVATAR_MODEL_URL ?? ''
+const MODEL_URL = process.env.NEXT_PUBLIC_AVATAR_MODEL_URL || '/model/anatomy.glb'
 
 /** WebGL capability detection — falls back to the searchable Region List. */
 function detectWebGLSupport(): boolean {
